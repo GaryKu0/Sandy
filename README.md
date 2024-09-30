@@ -1,6 +1,12 @@
+
 <h1 align="center">Sandy 🧽🌿</h1>
 
 <img align="center" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjXemO3qq8pyUMQVplQ5myfaS8NoMJ-BJ6SMihxJMskLkMfTgxyuAqyLhmZEWuQhTCxN3pTLQ34U7RBuyPnDqQIpGP1JUbdsLs_7g9c3TVOkAr1vEXNPdBiTPbCjZ59aPlZrgB_8m8C1B5oDJrLq7XhbAt2Q2RKE14bxP74wlCTY3LgXHhFXA/s1400/sandy-cheeks-social.jpg"/>
+
+![ios](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white)
+![swift](https://img.shields.io/badge/Swift-FA7343?style=for-the-badge&logo=swift&logoColor=white)
+![html](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+
 
 **Sandy** is your personal health assistant app inspired by SpongeBob's Sandy Cheeks. Just like Sandy keeps herself healthy and active underwater, our app helps you stay on top of your health goals through engaging tasks, real-time feedback, and intuitive interactions.
 
@@ -14,6 +20,8 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [Usage](#usage)
+- [How to Add a New Task](#how-to-add-a-new-task)
+- [How to Add a New Model](#how-to-add-a-new-model)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -96,6 +104,66 @@ Follow these instructions to set up **Sandy** on your local machine for developm
 
    - Access the settings by tapping the gear icon in the top-right corner.
    - Add or remove models, adjust countdown durations, and toggle auto-processing features.
+
+---
+
+## ➕ How to Add a New Task
+
+You can easily add new tasks to **Sandy** by modifying the `tasks` array in `ContentView.swift`.
+
+### Steps:
+1. Open `ContentView.swift`.
+2. Locate the `@State private var tasks: [Task]` section.
+3. Add a new `Task` object with your desired properties.
+
+For example:
+
+```swift
+Task(
+    name: "Jumping Jacks",
+    expectedConditions: [2: "jumping", 4: "handsUp"],
+    duration: 5,
+    modelName: "jump-model",
+    icon: "figure.walk",
+    indexToLabelMap: [0: "standing", 1: "handsDown", 2: "jumping", 4: "handsUp"],
+    multipliers: ["jumping": 1.2]
+)
+```
+
+**Task parameters**:
+- `name`: Name of the task.
+- `expectedConditions`: Conditions for successful task completion.
+- `duration`: Countdown duration in seconds.
+- `modelName`: The custom model associated with this task.
+- `icon`: A system icon representing the task.
+- `indexToLabelMap`: Maps model output indices to readable labels.
+- `multipliers`: Optional adjustments for model outputs.
+
+---
+
+## ➕ How to Add a New Model
+
+You can add custom models to **Sandy** and load them dynamically.
+
+### Steps:
+1. **Host the Model**:
+   - Ensure your TensorFlow model is accessible through a URL, or you can load it from IndexedDB after downloading it once.
+
+2. **Register the Model in the HTML**:
+   Open `index.html` and update the `modelNames` array under the `loadModels()` function.
+
+   For example:
+   ```javascript
+   const modelNames = ['facing-model', 'jump-model']; // Add your new model here
+   ```
+
+3. **Add the Task in Swift**:
+   After registering the model in the HTML, follow the steps in the **How to Add a New Task** section to associate the model with a task in `ContentView.swift`.
+
+4. **Loading and Using the Model**:
+   The app will try to load the model from IndexedDB or fetch it from the network. You can also preload models in IndexedDB for faster access.
+
+   Ensure your model follows the required input/output format as expected by the app. 
 
 ---
 
