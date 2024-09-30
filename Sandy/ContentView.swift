@@ -58,7 +58,7 @@ struct ContentView: View {
             expectedConditions: [7: "top"], // 修改鍵值為 7
             duration: 4,
             modelName: "facing-model",
-            icon: "square.and.arrow.up",
+            icon: "arrow.up.circle.fill",
             indexToLabelMap: [5: "down", 6: "unknown", 7: "top"], // 確保鍵值正確
             multipliers: ["top": 1.4]
         )
@@ -283,6 +283,7 @@ struct BottomSheet: View {
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
                                 .padding()
                         }
+                        .contentTransition(.symbolEffect(.replace))
                     }
                     .padding(.trailing, 6)
                     .padding(.leading, 24)
@@ -307,7 +308,7 @@ struct BottomSheet: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(taskCompleted && index == taskIndex ? .green : (colorScheme == .dark ? .white : .black))
-                                .opacity(0.2)
+                                .opacity(0.1)
                                 .frame(height: 50)
                             Text(tasks[index].name)
                                 .font(.system(size: 18))
