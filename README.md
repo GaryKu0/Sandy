@@ -14,16 +14,16 @@
 
 ## 📋 Table of Contents
 
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage](#usage)
-- [How to Add a New Task](#how-to-add-a-new-task)
-- [How to Add a New Model](#how-to-add-a-new-model)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+- [Features](#-features)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#-prerequisites)
+  - [Installation](#-installation)
+- [Usage](#-usage)
+- [How to Add a New Task](#-how-to-add-a-new-task)
+- [How to Add a New Model](#-how-to-add-a-new-model)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgements](#-acknowledgements)
 
 ---
 
