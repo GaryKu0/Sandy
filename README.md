@@ -58,9 +58,8 @@ Follow these instructions to set up **Sandy** on your local machine for developm
 
 ### 🛠 Prerequisites
 
-- **Xcode 14.0** or later
-- **iOS 16.0** or later
-- **Swift 5.5** or later
+- **Xcode 16.0** or later
+- **iOS 18.0** or later
 
 ### 📦 Installation
 
