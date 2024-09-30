@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 import WebKit
 import Combine
+import WhatsNewKit
 
 // 主視圖 ContentView
 struct ContentView: View {
@@ -65,6 +66,47 @@ struct ContentView: View {
     ]
 
     @StateObject var webViewModel = WebViewModel()
+
+    // 定義 `WhatsNew` 資料，改為非 Optional
+    var whatsNew: WhatsNew = WhatsNew(
+        title: "Sandy's New Adventures 🐿️🏄‍♀️",
+        features: [
+            .init(
+                image: .init(systemName: "camera.fill", foregroundColor: .blue),
+                title: "實時動作偵測",
+                subtitle: "使用相機獲取即時回饋，就像珊迪的高科技套裝一樣！"
+            ),
+            .init(
+                image: .init(systemName: "timer", foregroundColor: .green),
+                title: "清脆又大聲的倒數",
+                subtitle: "清脆又大聲的倒數讓你沒看著螢幕也知道自己做對了！"
+            ),
+            .init(
+                image: .init(systemName: "list.bullet.rectangle.portrait", foregroundColor: .purple),
+                title: "清晰可見的步驟",
+                subtitle: "保持你健康的秘訣都清清楚楚的寫在螢幕上"
+            ),
+            .init(
+                image: .init(systemName: "person.2.fill", foregroundColor: .orange),
+                title: "大家一起來保持健康",
+                subtitle: "和你的家人朋友們一起努力保持健康吧！"
+            )
+        ],
+        primaryAction: WhatsNew.PrimaryAction(
+            title: "開始吧！",
+            backgroundColor: .accentColor,
+            foregroundColor: .white,
+            hapticFeedback: .notification(.success),
+            onDismiss: {
+                print("Sandy's new features have been explored!")
+                // 這裡可以觸發其他行為，例如繼續到應用主畫面
+            }
+        )
+    )
+
+    // 控制兩個不同的 sheet
+    @State private var isWhatsNewPresented = true // 控制 WhatsNewSheet 的顯示狀態
+    @State private var isBottomSheetPresented = false // 控制 BottomSheet 的顯示狀態
 
     var body: some View {
         NavigationStack {
@@ -154,7 +196,18 @@ struct ContentView: View {
                 // 取消倒數計時器
                 timerCancellable?.cancel()
             }
-            .sheet(isPresented: $isPresented) {
+            // 先呈現 WhatsNewSheet
+            .sheet(isPresented: $isWhatsNewPresented) {
+                WhatsNewView(whatsNew: whatsNew)
+                    .onDisappear {
+                        // 當 WhatsNewSheet 被關閉時，顯示 BottomSheet
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            isBottomSheetPresented = true
+                        }
+                    }
+            }
+            // 當 WhatsNewSheet 被關閉後，呈現 BottomSheet
+            .sheet(isPresented: $isBottomSheetPresented) {
                 BottomSheet(
                     isPresented: $isPresented,
                     outputText: $outputText,
@@ -175,6 +228,8 @@ struct ContentView: View {
                 .presentationCornerRadius(36)
                 .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
             }
+
+            // 隱藏的 WebViewContainer
             WebViewContainer(
                 inputImage: $inputImage,
                 outputText: $outputText,
@@ -246,6 +301,7 @@ struct ContentView: View {
         AudioServicesPlaySystemSound(1103) // 倒數計時音效
     }
 }
+
 
 // MARK: - BottomSheet View
 struct BottomSheet: View {

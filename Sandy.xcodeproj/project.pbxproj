@@ -16,6 +16,7 @@
 		6F37E5C62CA7012A004F66E9 /* WebViewContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5C52CA70122004F66E9 /* WebViewContainer.swift */; };
 		6F37E5C82CA701DB004F66E9 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 6F37E5C72CA701D6004F66E9 /* index.html */; };
 		6F37E5CA2CA70581004F66E9 /* AnimatedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5C92CA7057C004F66E9 /* AnimatedButton.swift */; };
+		6FDC07742CAAD2F300325F85 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6FDC07732CAAD2F300325F85 /* WhatsNewKit */; };
 		6FF49BE92CA743F700ED1BC6 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF49BE82CA743F400ED1BC6 /* Task.swift */; };
 		6FF49BEB2CA7532E00ED1BC6 /* WebViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF49BEA2CA7532B00ED1BC6 /* WebViewModel.swift */; };
 		6FF49BEF2CA97F1000ED1BC6 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF49BEE2CA97F0C00ED1BC6 /* CameraView.swift */; };
@@ -44,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6FDC07742CAAD2F300325F85 /* WhatsNewKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -111,6 +113,9 @@
 			dependencies = (
 			);
 			name = Sandy;
+			packageProductDependencies = (
+				6FDC07732CAAD2F300325F85 /* WhatsNewKit */,
+			);
 			productName = Sandy;
 			productReference = 6F37E5AB2CA6F879004F66E9 /* Sandy.app */;
 			productType = "com.apple.product-type.application";
@@ -139,6 +144,9 @@
 				Base,
 			);
 			mainGroup = 6F37E5A22CA6F879004F66E9;
+			packageReferences = (
+				6FDC07722CAAD2F300325F85 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
+			);
 			productRefGroup = 6F37E5AC2CA6F879004F66E9 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -382,6 +390,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6FDC07722CAAD2F300325F85 /* XCRemoteSwiftPackageReference "WhatsNewKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SvenTiigi/WhatsNewKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6FDC07732CAAD2F300325F85 /* WhatsNewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6FDC07722CAAD2F300325F85 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
+			productName = WhatsNewKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6F37E5A32CA6F879004F66E9 /* Project object */;
 }
