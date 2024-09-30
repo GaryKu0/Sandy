@@ -15,7 +15,6 @@
 ## 📋 Table of Contents
 
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -39,18 +38,6 @@
 
 ---
 
-## 📸 Screenshots
-
-![Home Screen](https://via.placeholder.com/400x800.png?text=Home+Screen)
-*Home screen with camera view and task overview.*
-
-![Task Countdown](https://via.placeholder.com/400x800.png?text=Task+Countdown)
-*Countdown timer during an active task.*
-
-![Settings](https://via.placeholder.com/400x800.png?text=Settings)
-*Settings screen to customize your experience.*
-
----
 
 ## 🚀 Getting Started
 
