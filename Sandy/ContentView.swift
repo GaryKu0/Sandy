@@ -99,7 +99,6 @@ struct ContentView: View {
             hapticFeedback: .notification(.success),
             onDismiss: {
                 print("Sandy's new features have been explored!")
-                // 這裡可以觸發其他行為，例如繼續到應用主畫面
             }
         )
     )
@@ -128,7 +127,7 @@ struct ContentView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        NavigationLink(destination: SettingsView().environmentObject(webViewModel)) {
+                        NavigationLink(destination: SettingsView(), isActive: $showSettings) {
                             Image(systemName: "gearshape.fill")
                                 .font(.title2)
                                 .foregroundColor(.white)
@@ -187,7 +186,6 @@ struct ContentView: View {
                     isProcessing = true
                     currentTask = tasks[taskIndex]
                     print("定時器觸發，開始自動處理圖像")
-                    // 假設開始處理圖像會觸發 WebViewContainer 的處理
                 }
             }
             .onDisappear {
@@ -200,7 +198,6 @@ struct ContentView: View {
             .sheet(isPresented: $isWhatsNewPresented) {
                 WhatsNewView(whatsNew: whatsNew)
                     .onDisappear {
-                        // 當 WhatsNewSheet 被關閉時，顯示 BottomSheet
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             isBottomSheetPresented = true
                         }
@@ -228,7 +225,6 @@ struct ContentView: View {
                 .presentationCornerRadius(36)
                 .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
             }
-
             // 隱藏的 WebViewContainer
             WebViewContainer(
                 inputImage: $inputImage,
@@ -241,6 +237,16 @@ struct ContentView: View {
             .frame(width: 0, height: 0)
         }
         .environmentObject(webViewModel)
+        // 監聽 showSettings 的變化來控制 BottomSheet
+        .onChange(of: showSettings) { newValue in
+            if newValue {
+                // SettingsView 被打開，收合 BottomSheet
+                isBottomSheetPresented = false
+            } else {
+                // SettingsView 被關閉，展開 BottomSheet
+                isBottomSheetPresented = true
+            }
+        }
     }
 
     // MARK: - Task Handlers
@@ -256,14 +262,10 @@ struct ContentView: View {
         if isCountingDown {
             pauseCountdown()
         }
-
-        // 簡化 outputText 顯示
         outputText = "條件未達成"
-        print("條件未達成")
     }
 
     func startCountdown() {
-        print("開始倒數")
         isCountingDown = true
         countdown = currentTask?.duration ?? 4
         taskCompleted = false
@@ -271,7 +273,6 @@ struct ContentView: View {
     }
 
     func pauseCountdown() {
-        print("暫停倒數")
         isCountingDown = false
     }
 
@@ -288,7 +289,6 @@ struct ContentView: View {
                 countdown = 0
                 isCountingDown = false
                 outputText = "準備下一個任務"
-                print("移動到下一個任務: \(currentTask?.name ?? "未知任務")")
             }
         }
     }
@@ -301,7 +301,6 @@ struct ContentView: View {
         AudioServicesPlaySystemSound(1103) // 倒數計時音效
     }
 }
-
 
 // MARK: - BottomSheet View
 struct BottomSheet: View {
@@ -359,7 +358,6 @@ struct BottomSheet: View {
                 }
 
                 HStack {
-                    // 顯示兩個任務
                     ForEach(taskIndex..<min(taskIndex + 2, tasks.count), id: \.self) { index in
                         ZStack {
                             RoundedRectangle(cornerRadius: 10)
@@ -371,14 +369,13 @@ struct BottomSheet: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(taskCompleted && index == taskIndex ? .green : (colorScheme == .dark ? .white : .black))
                         }
-                        .padding(.horizontal, 4) // 增加一點間距
+                        .padding(.horizontal, 4)
                     }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
 
                 HStack {
-                    // 自動偵測切換按鈕
                     AnimatedButton(
                         text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
                         action: {
@@ -404,72 +401,24 @@ struct BottomSheet: View {
             .ignoresSafeArea()
         }
     }
-
-    private func playSuccessSound() {
-        AudioServicesPlaySystemSound(1057) // 成功音效
-    }
 }
 
 // MARK: - Settings View
 struct SettingsView: View {
-    @State private var modelUrl = ""
-    @State private var modelName = ""
-
-    @EnvironmentObject var webViewModel: WebViewModel // 引入 WebViewModel
-
     var body: some View {
-        Form {
-            // 新增模型的區域
-            Section(header: Text("新增模型")) {
-                TextField("模型 JSON URL", text: $modelUrl)
-                    .keyboardType(.URL)
-                    .autocapitalization(.none)
-                TextField("模型名稱", text: $modelName)
-
-                // 儲存模型按鈕
-                Button(action: {
-                    // 準備要發送給 JavaScript 的資料
-                    let data: [String: Any] = ["action": "saveModel", "url": modelUrl, "modelName": modelName]
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []),
-                       let jsonString = String(data: jsonData, encoding: .utf8) {
-                        let jsCode = "window.webkit.messageHandlers.indexedDBHandler.postMessage(\(jsonString));"
-                        print("發送給 WebView 的 JS: \(jsCode)")
-                        // 使用 webViewModel 中的 webView 執行 JS 代碼
-                        if let webView = webViewModel.webView {
-                            webView.evaluateJavaScript(jsCode, completionHandler: nil)
-                        } else {
-                            print("WebView 未初始化")
-                        }
-                    }
-                }) {
-                    Text("儲存模型")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
-
-            // 刪除模型的區域
-            Section(header: Text("刪除模型")) {
-                TextField("模型名稱", text: $modelName)
-
-                // 刪除模型按鈕
-                Button(action: {
-                    let data: [String: Any] = ["action": "deleteModel", "modelName": modelName]
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []),
-                       let jsonString = String(data: jsonData, encoding: .utf8) {
-                        let jsCode = "window.webkit.messageHandlers.indexedDBHandler.postMessage(\(jsonString));"
-                        print("發送給 WebView 的 JS: \(jsCode)")
-                        // 使用 webViewModel 中的 webView 執行 JS 代碼
-                        if let webView = webViewModel.webView {
-                            webView.evaluateJavaScript(jsCode, completionHandler: nil)
-                        } else {
-                            print("WebView 未初始化")
-                        }
-                    }
-                }) {
-                    Text("刪除模型")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
+        VStack {
+            Text("施工中")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            Image(systemName: "hammer.fill")
+                .font(.system(size: 50))
+                .padding()
+            
+            Text("此功能正在開發中，敬請期待！")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .padding()
         }
         .navigationBarTitle("設置", displayMode: .inline)
     }

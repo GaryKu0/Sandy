@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		6F37E5AF2CA6F879004F66E9 /* SandyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5AE2CA6F879004F66E9 /* SandyApp.swift */; };
 		6F37E5B12CA6F879004F66E9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5B02CA6F879004F66E9 /* ContentView.swift */; };
-		6F37E5B32CA6F879004F66E9 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5B22CA6F879004F66E9 /* Item.swift */; };
 		6F37E5B52CA6F87A004F66E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F37E5B42CA6F87A004F66E9 /* Assets.xcassets */; };
 		6F37E5B82CA6F87A004F66E9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F37E5B72CA6F87A004F66E9 /* Preview Assets.xcassets */; };
 		6F37E5C32CA6F9C9004F66E9 /* floatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5C22CA6F9C9004F66E9 /* floatingCard.swift */; };
@@ -27,7 +26,6 @@
 		6F37E5AB2CA6F879004F66E9 /* Sandy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sandy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F37E5AE2CA6F879004F66E9 /* SandyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandyApp.swift; sourceTree = "<group>"; };
 		6F37E5B02CA6F879004F66E9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		6F37E5B22CA6F879004F66E9 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		6F37E5B42CA6F87A004F66E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6F37E5B72CA6F87A004F66E9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		6F37E5C22CA6F9C9004F66E9 /* floatingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floatingCard.swift; sourceTree = "<group>"; };
@@ -84,7 +82,6 @@
 				6F37E5AE2CA6F879004F66E9 /* SandyApp.swift */,
 				6F37E5B02CA6F879004F66E9 /* ContentView.swift */,
 				6F37E5C22CA6F9C9004F66E9 /* floatingCard.swift */,
-				6F37E5B22CA6F879004F66E9 /* Item.swift */,
 				6F37E5B42CA6F87A004F66E9 /* Assets.xcassets */,
 				6F37E5B62CA6F87A004F66E9 /* Preview Content */,
 				6FDC07772CAAD68000325F85 /* Launch Screen.storyboard */,
@@ -180,7 +177,6 @@
 			files = (
 				6F37E5B12CA6F879004F66E9 /* ContentView.swift in Sources */,
 				6F37E5C62CA7012A004F66E9 /* WebViewContainer.swift in Sources */,
-				6F37E5B32CA6F879004F66E9 /* Item.swift in Sources */,
 				6FF49BEF2CA97F1000ED1BC6 /* CameraView.swift in Sources */,
 				6F37E5AF2CA6F879004F66E9 /* SandyApp.swift in Sources */,
 				6F37E5CA2CA70581004F66E9 /* AnimatedButton.swift in Sources */,

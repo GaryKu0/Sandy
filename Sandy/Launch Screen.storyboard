@@ -25,8 +25,12 @@
                                 <rect key="frame" x="73" y="375" width="150" height="102"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </imageView>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" fixedFrame="YES" image="sandy" translatesAutoresizingMaskIntoConstraints="NO" id="KcR-g5-GBj">
+                            <imageView hidden="YES" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" fixedFrame="YES" image="sandy" translatesAutoresizingMaskIntoConstraints="NO" id="KcR-g5-GBj">
                                 <rect key="frame" x="161" y="344" width="158" height="164"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" fixedFrame="YES" image="Sandy_transparent" translatesAutoresizingMaskIntoConstraints="NO" id="kTI-2a-1jW">
+                                <rect key="frame" x="159" y="240" width="161" height="373"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </imageView>
                         </subviews>
@@ -45,7 +49,8 @@
         </scene>
     </scenes>
     <resources>
-        <image name="sandy" width="1786" height="1860"/>
+        <image name="Sandy_transparent" width="595.33331298828125" height="620"/>
+        <image name="sandy" width="595.33331298828125" height="620"/>
         <image name="sandy_house_crop" width="702" height="441"/>
         <systemColor name="viewFlipsideBackgroundColor">
             <color red="0.12156862745098039" green="0.12941176470588237" blue="0.14117647058823529" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
