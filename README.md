@@ -53,8 +53,8 @@ Follow these instructions to set up **Sandy** on your local machine for developm
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/sandy.git
-   cd sandy
+   git clone https://github.com/GaryKu0/Sandy.git
+   cd Sandy
    ```
 
 2. **Open the Project in Xcode**
