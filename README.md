@@ -14,16 +14,16 @@
 
 ## 📋 Table of Contents
 
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage](#usage)
-- [How to Add a New Task](#how-to-add-a-new-task)
-- [How to Add a New Model](#how-to-add-a-new-model)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+- [Features](#-features)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#-prerequisites)
+  - [Installation](#-installation)
+- [Usage](#-usage)
+- [How to Add a New Task](#-how-to-add-a-new-task)
+- [How to Add a New Model](#-how-to-add-a-new-model)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgements](#-acknowledgements)
 
 ---
 
@@ -53,8 +53,8 @@ Follow these instructions to set up **Sandy** on your local machine for developm
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/sandy.git
-   cd sandy
+   git clone https://github.com/GaryKu0/Sandy.git
+   cd Sandy
    ```
 
 2. **Open the Project in Xcode**
