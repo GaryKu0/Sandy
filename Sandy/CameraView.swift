@@ -7,11 +7,11 @@ struct CameraView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: .zero)
 
-        // 创建 AVCapture 会话
+        // 創建 AVCapture 會話
         let session = AVCaptureSession()
-        session.sessionPreset = .high // 使用较高的预设，保持流畅性
+        session.sessionPreset = .high // 使用較高的預設，保持流暢性
 
-        // 使用前置摄像头
+        // 使用前置攝像頭
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else {
@@ -19,15 +19,15 @@ struct CameraView: UIViewRepresentable {
         }
         session.addInput(input)
 
-        // 设置预览层
+        // 設置預覽層
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill  // 保证预览层覆盖整个屏幕
+        previewLayer.videoGravity = .resizeAspectFill  // 保證預覽層覆蓋整個屏幕
         previewLayer.frame = view.bounds
         view.layer.addSublayer(previewLayer)
 
-        // 设置视频输出，用于捕获图片
+        // 設置視頻輸出，用於捕獲圖片
         let videoOutput = AVCaptureVideoDataOutput()
-        videoOutput.alwaysDiscardsLateVideoFrames = true // 忽略处理较慢的帧
+        videoOutput.alwaysDiscardsLateVideoFrames = true // 忽略處理較慢的幀
         let videoQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated)
         videoOutput.setSampleBufferDelegate(context.coordinator, queue: videoQueue)
         
@@ -35,10 +35,10 @@ struct CameraView: UIViewRepresentable {
             session.addOutput(videoOutput)
         }
 
-        // 开始会话
+        // 開始會話
         session.startRunning()
 
-        // 在上下文中保存会话和预览图层
+        // 在上下文中保存會話和預覽圖層
         context.coordinator.session = session
         context.coordinator.previewLayer = previewLayer
 
@@ -46,7 +46,7 @@ struct CameraView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        // 确保预览层的大小随屏幕调整
+        // 確保預覽層的大小隨屏幕調整
         DispatchQueue.main.async {
             context.coordinator.previewLayer?.frame = uiView.bounds
         }
@@ -56,7 +56,7 @@ struct CameraView: UIViewRepresentable {
         Coordinator(self)
     }
 
-    // 协调器类，用于处理视频帧捕获
+    // 協調器類，用於處理視頻幀捕獲
     class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         var parent: CameraView
         var session: AVCaptureSession?
@@ -67,15 +67,15 @@ struct CameraView: UIViewRepresentable {
             self.parent = parent
         }
 
-        // 处理每帧的视频数据
+        // 處理每幀的視頻數據
         func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
             frameCounter += 1
 
-            // 每隔 15 帧捕获一次图像（可以根据需要调整帧数）
+            // 每隔 15 幀捕獲一次圖像（可以根據需要調整幀數）
             if frameCounter % 15 == 0 {
                 frameCounter = 0
 
-                // 在后台线程处理图像，并在主线程中更新 UI
+                // 在後台線程處理圖像，並在主線程中更新 UI
                 if let image = imageFromSampleBuffer(sampleBuffer) {
                     DispatchQueue.main.async {
                         self.parent.capturedImage = image
@@ -84,7 +84,7 @@ struct CameraView: UIViewRepresentable {
             }
         }
 
-        // 将 CMSampleBuffer 转换为 UIImage
+        // 將 CMSampleBuffer 轉換為 UIImage
         func imageFromSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> UIImage? {
             guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
 
@@ -93,7 +93,7 @@ struct CameraView: UIViewRepresentable {
 
             guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
 
-            // 返回转换后的 UIImage，并调整为镜像模式
+            // 返回轉換後的 UIImage，並調整為鏡像模式
             let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .rightMirrored)
             return image
         }
