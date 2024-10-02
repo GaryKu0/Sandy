@@ -15,6 +15,9 @@
 		6F37E5C62CA7012A004F66E9 /* WebViewContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5C52CA70122004F66E9 /* WebViewContainer.swift */; };
 		6F37E5C82CA701DB004F66E9 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 6F37E5C72CA701D6004F66E9 /* index.html */; };
 		6F37E5CA2CA70581004F66E9 /* AnimatedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F37E5C92CA7057C004F66E9 /* AnimatedButton.swift */; };
+		6FB7FE1D2CAD846200FE2830 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB7FE1C2CAD845E00FE2830 /* SettingsView.swift */; };
+		6FB7FE1F2CAD849300FE2830 /* SideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB7FE1E2CAD848F00FE2830 /* SideSheet.swift */; };
+		6FB7FE212CAD91DA00FE2830 /* YouTubePlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB7FE202CAD91C500FE2830 /* YouTubePlayerView.swift */; };
 		6FDC07742CAAD2F300325F85 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6FDC07732CAAD2F300325F85 /* WhatsNewKit */; };
 		6FDC07782CAAD68000325F85 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6FDC07772CAAD68000325F85 /* Launch Screen.storyboard */; };
 		6FF49BE92CA743F700ED1BC6 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF49BE82CA743F400ED1BC6 /* Task.swift */; };
@@ -34,6 +37,9 @@
 		6F37E5C92CA7057C004F66E9 /* AnimatedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedButton.swift; sourceTree = "<group>"; };
 		6F37E5CB2CA7092F004F66E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6F37E5CC2CA7095F004F66E9 /* Sandy-info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Sandy-info.plist"; sourceTree = "<group>"; };
+		6FB7FE1C2CAD845E00FE2830 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6FB7FE1E2CAD848F00FE2830 /* SideSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideSheet.swift; sourceTree = "<group>"; };
+		6FB7FE202CAD91C500FE2830 /* YouTubePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerView.swift; sourceTree = "<group>"; };
 		6FDC07772CAAD68000325F85 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		6FF49BE82CA743F400ED1BC6 /* Task.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Task.swift; sourceTree = "<group>"; };
 		6FF49BEA2CA7532B00ED1BC6 /* WebViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewModel.swift; sourceTree = "<group>"; };
@@ -72,6 +78,9 @@
 		6F37E5AD2CA6F879004F66E9 /* Sandy */ = {
 			isa = PBXGroup;
 			children = (
+				6FB7FE202CAD91C500FE2830 /* YouTubePlayerView.swift */,
+				6FB7FE1E2CAD848F00FE2830 /* SideSheet.swift */,
+				6FB7FE1C2CAD845E00FE2830 /* SettingsView.swift */,
 				6FF49BEE2CA97F0C00ED1BC6 /* CameraView.swift */,
 				6FF49BEA2CA7532B00ED1BC6 /* WebViewModel.swift */,
 				6FF49BE82CA743F400ED1BC6 /* Task.swift */,
@@ -175,14 +184,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6FB7FE1F2CAD849300FE2830 /* SideSheet.swift in Sources */,
 				6F37E5B12CA6F879004F66E9 /* ContentView.swift in Sources */,
 				6F37E5C62CA7012A004F66E9 /* WebViewContainer.swift in Sources */,
 				6FF49BEF2CA97F1000ED1BC6 /* CameraView.swift in Sources */,
+				6FB7FE1D2CAD846200FE2830 /* SettingsView.swift in Sources */,
 				6F37E5AF2CA6F879004F66E9 /* SandyApp.swift in Sources */,
 				6F37E5CA2CA70581004F66E9 /* AnimatedButton.swift in Sources */,
 				6FF49BE92CA743F700ED1BC6 /* Task.swift in Sources */,
 				6F37E5C32CA6F9C9004F66E9 /* floatingCard.swift in Sources */,
 				6FF49BEB2CA7532E00ED1BC6 /* WebViewModel.swift in Sources */,
+				6FB7FE212CAD91DA00FE2830 /* YouTubePlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

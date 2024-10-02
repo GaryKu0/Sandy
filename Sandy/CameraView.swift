@@ -30,7 +30,7 @@ struct CameraView: UIViewRepresentable {
         videoOutput.alwaysDiscardsLateVideoFrames = true // 忽略處理較慢的幀
         let videoQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated)
         videoOutput.setSampleBufferDelegate(context.coordinator, queue: videoQueue)
-        
+
         if session.canAddOutput(videoOutput) {
             session.addOutput(videoOutput)
         }
@@ -41,6 +41,12 @@ struct CameraView: UIViewRepresentable {
         // 在上下文中保存會話和預覽圖層
         context.coordinator.session = session
         context.coordinator.previewLayer = previewLayer
+
+        // 監聽裝置方向變化
+        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { _ in
+            self.updatePreviewLayerOrientation(previewLayer)
+        }
+        self.updatePreviewLayerOrientation(previewLayer)
 
         return view
     }
@@ -54,6 +60,25 @@ struct CameraView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+
+    // 更新預覽層的方向
+    func updatePreviewLayerOrientation(_ previewLayer: AVCaptureVideoPreviewLayer) {
+        if let connection = previewLayer.connection {
+            switch UIDevice.current.orientation {
+            case .portrait:
+                connection.videoOrientation = .portrait
+            case .landscapeRight:
+                connection.videoOrientation = .landscapeLeft
+            case .landscapeLeft:
+                connection.videoOrientation = .landscapeRight
+            case .portraitUpsideDown:
+                connection.videoOrientation = .portraitUpsideDown
+            default:
+                connection.videoOrientation = .portrait
+            }
+            previewLayer.frame = UIScreen.main.bounds
+        }
     }
 
     // 協調器類，用於處理視頻幀捕獲
@@ -93,8 +118,23 @@ struct CameraView: UIViewRepresentable {
 
             guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
 
-            // 返回轉換後的 UIImage，並調整為鏡像模式
-            let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .rightMirrored)
+            // 根據當前裝置方向調整圖片方向
+            var imageOrientation: UIImage.Orientation = .rightMirrored
+            switch UIDevice.current.orientation {
+            case .portrait:
+                imageOrientation = .rightMirrored
+            case .landscapeLeft:
+                imageOrientation = .upMirrored
+            case .landscapeRight:
+                imageOrientation = .downMirrored
+            case .portraitUpsideDown:
+                imageOrientation = .leftMirrored
+            default:
+                imageOrientation = .rightMirrored
+            }
+
+            // 返回轉換後的 UIImage
+            let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: imageOrientation)
             return image
         }
     }

@@ -6,7 +6,7 @@ import WhatsNewKit
 
 // 主視圖 ContentView
 struct ContentView: View {
-    // MARK: - State Variables
+    // MARK: - 狀態變數
     @State private var showSettings = false
     @State private var inputImage: UIImage?
     @State private var outputText: String = "準備中..."
@@ -22,7 +22,7 @@ struct ContentView: View {
     @State private var timerCancellable: AnyCancellable?
     @State private var isCooldown: Bool = false // 控制冷卻狀態
 
-    // 定義自動處理的 timer
+    // 定義自動處理的計時器
     let autoProcessTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     // 定義任務列表
@@ -56,24 +56,24 @@ struct ContentView: View {
         ),
         Task(
             name: "向上看",
-            expectedConditions: [7: "top"], // 修改鍵值為 7
+            expectedConditions: [7: "top"],
             duration: 4,
             modelName: "facing-model",
             icon: "arrow.up.circle.fill",
-            indexToLabelMap: [5: "down", 6: "unknown", 7: "top"], // 確保鍵值正確
+            indexToLabelMap: [5: "down", 6: "unknown", 7: "top"],
             multipliers: ["top": 1.4]
         )
     ]
 
     @StateObject var webViewModel = WebViewModel()
 
-    // 定義 `WhatsNew` 資料，改為非 Optional
+    // 定義 `WhatsNew` 資料
     var whatsNew: WhatsNew = WhatsNew(
-        title: "Sandy's New Adventures 🐿️🏄‍♀️",
+        title: "珊迪的新冒險 🐿️🏄‍♀️",
         features: [
             .init(
                 image: .init(systemName: "camera.fill", foregroundColor: .blue),
-                title: "實時動作偵測",
+                title: "即時動作偵測",
                 subtitle: "使用相機獲取即時回饋，就像珊迪的高科技套裝一樣！"
             ),
             .init(
@@ -98,7 +98,7 @@ struct ContentView: View {
             foregroundColor: .white,
             hapticFeedback: .notification(.success),
             onDismiss: {
-                print("Sandy's new features have been explored!")
+                print("探索了珊迪的新功能！")
             }
         )
     )
@@ -107,34 +107,96 @@ struct ContentView: View {
     @State private var isWhatsNewPresented = true // 控制 WhatsNewSheet 的顯示狀態
     @State private var isBottomSheetPresented = false // 控制 BottomSheet 的顯示狀態
 
+    // 環境變數，用於檢測裝置和尺寸類型
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+    @State private var deviceOrientation = UIDevice.current.orientation
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                // 相機背景視圖
-                CameraView(capturedImage: $inputImage)
-                    .edgesIgnoringSafeArea(.all)
+            GeometryReader { geometry in
+                if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
+                    // iPad 橫向模式，使用 HStack 佈局
+                    ZStack {
+                        HStack(spacing: 0) {
+                            ZStack {
+                                // 相機背景視圖
+                                CameraView(capturedImage: $inputImage)
+                                    .edgesIgnoringSafeArea(.all)
+                                    .onAppear {
+                                        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+                                    }
+                                    .onDisappear {
+                                        UIDevice.current.endGeneratingDeviceOrientationNotifications()
+                                    }
+                                    .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+                                        deviceOrientation = UIDevice.current.orientation
+                                    }
 
-                // 倒數計時大字顯示
-                if isCountingDown && countdown > 0 {
-                    Text("\(countdown)")
-                        .font(.system(size: 100, weight: .bold))
-                        .foregroundColor(.white)
-                        .animation(.easeInOut, value: countdown)
-                        .transition(.opacity)
-                }
+                                // 倒數計時大字顯示
+                                if isCountingDown && countdown > 0 {
+                                    Text("\(countdown)")
+                                        .font(.system(size: 100, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .animation(.easeInOut, value: countdown)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .frame(width: geometry.size.width * 0.6)
 
-                // 右上角的設定按鈕
-                VStack {
-                    HStack {
-                        Spacer()
-                        NavigationLink(destination: SettingsView(), isActive: $showSettings) {
-                            Image(systemName: "gearshape.fill")
-                                .font(.title2)
+                            Spacer()
+                        }
+
+                        // 右側的側邊欄，添加間距和圓角
+                        SideSheet(
+                            isPresented: $isPresented,
+                            outputText: $outputText,
+                            isAutoProcessingEnabled: $isAutoProcessingEnabled,
+                            isProcessing: $isProcessing,
+                            inputImage: $inputImage,
+                            tasks: $tasks,
+                            currentTask: $currentTask,
+                            taskIndex: $taskIndex,
+                            predictedLabels: $predictedLabels,
+                            taskCompleted: $taskCompleted,
+                            countdown: $countdown,
+                            isCountingDown: $isCountingDown
+                        )
+                        .frame(width: geometry.size.width * 0.35)
+                        .padding(.trailing, 16)
+                        .padding(.leading, geometry.size.width * 0.65 + 16)
+                        .padding(.vertical, 16)
+                    }
+                } else {
+                    // iPhone 或直向模式，使用原始佈局
+                    ZStack {
+                        // 相機背景視圖
+                        CameraView(capturedImage: $inputImage)
+                            .edgesIgnoringSafeArea(.all)
+
+                        // 倒數計時大字顯示
+                        if isCountingDown && countdown > 0 {
+                            Text("\(countdown)")
+                                .font(.system(size: 100, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding()
+                                .animation(.easeInOut, value: countdown)
+                                .transition(.opacity)
+                        }
+
+                        // 右上角的設定按鈕
+                        VStack {
+                            HStack {
+                                Spacer()
+                                NavigationLink(destination: SettingsView(), isActive: $showSettings) {
+                                    Image(systemName: "gearshape.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.white)
+                                        .padding()
+                                }
+                            }
+                            Spacer()
                         }
                     }
-                    Spacer()
                 }
             }
             .onAppear {
@@ -199,31 +261,37 @@ struct ContentView: View {
                 WhatsNewView(whatsNew: whatsNew)
                     .onDisappear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            isBottomSheetPresented = true
+                            if UIDevice.current.userInterfaceIdiom != .pad {
+                                isBottomSheetPresented = true
+                            } else {
+                                isBottomSheetPresented = false // 確保在 iPad 上不顯示 BottomSheet
+                            }
                         }
                     }
             }
-            // 當 WhatsNewSheet 被關閉後，呈現 BottomSheet
+            // 當 WhatsNewSheet 被關閉後，呈現 BottomSheet（僅在非 iPad 上）
             .sheet(isPresented: $isBottomSheetPresented) {
-                BottomSheet(
-                    isPresented: $isPresented,
-                    outputText: $outputText,
-                    isAutoProcessingEnabled: $isAutoProcessingEnabled,
-                    isProcessing: $isProcessing,
-                    inputImage: $inputImage,
-                    tasks: $tasks,
-                    currentTask: $currentTask,
-                    taskIndex: $taskIndex,
-                    predictedLabels: $predictedLabels,
-                    taskCompleted: $taskCompleted, // 傳遞任務完成狀態
-                    countdown: $countdown, // 傳遞倒數計時
-                    isCountingDown: $isCountingDown // 傳遞倒數狀態
-                )
-                .interactiveDismissDisabled()
-                .presentationDetents([.fraction(0.4), .fraction(0.5)])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(36)
-                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
+                if UIDevice.current.userInterfaceIdiom != .pad {
+                    BottomSheet(
+                        isPresented: $isPresented,
+                        outputText: $outputText,
+                        isAutoProcessingEnabled: $isAutoProcessingEnabled,
+                        isProcessing: $isProcessing,
+                        inputImage: $inputImage,
+                        tasks: $tasks,
+                        currentTask: $currentTask,
+                        taskIndex: $taskIndex,
+                        predictedLabels: $predictedLabels,
+                        taskCompleted: $taskCompleted,
+                        countdown: $countdown,
+                        isCountingDown: $isCountingDown
+                    )
+                    .interactiveDismissDisabled()
+                    .presentationDetents([.fraction(0.4), .fraction(0.5)])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(36)
+                    .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
+                }
             }
             // 隱藏的 WebViewContainer
             WebViewContainer(
@@ -232,7 +300,7 @@ struct ContentView: View {
                 isProcessing: $isProcessing,
                 predictedLabels: $predictedLabels,
                 currentTask: $currentTask,
-                tasks: $tasks // 傳遞任務列表
+                tasks: $tasks
             )
             .frame(width: 0, height: 0)
         }
@@ -243,13 +311,15 @@ struct ContentView: View {
                 // SettingsView 被打開，收合 BottomSheet
                 isBottomSheetPresented = false
             } else {
-                // SettingsView 被關閉，展開 BottomSheet
-                isBottomSheetPresented = true
+                // SettingsView 被關閉，展開 BottomSheet（僅在非 iPad 上）
+                if UIDevice.current.userInterfaceIdiom != .pad {
+                    isBottomSheetPresented = true
+                }
             }
         }
     }
 
-    // MARK: - Task Handlers
+    // MARK: - 任務處理函數
     func handleTaskConditionMet() {
         print("條件達成: \(currentTask?.name ?? "未知任務")")
         if !isCountingDown && !isCooldown {
@@ -403,28 +473,8 @@ struct BottomSheet: View {
     }
 }
 
-// MARK: - Settings View
-struct SettingsView: View {
-    var body: some View {
-        VStack {
-            Text("施工中")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
-            Image(systemName: "hammer.fill")
-                .font(.system(size: 50))
-                .padding()
-            
-            Text("此功能正在開發中，敬請期待！")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .padding()
-        }
-        .navigationBarTitle("設置", displayMode: .inline)
-    }
-}
 
 // MARK: - Preview
-#Preview {
+#Preview{
     ContentView()
 }
