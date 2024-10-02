@@ -29,28 +29,7 @@ struct WebViewContainer: UIViewRepresentable {
 
         // 注入 JavaScript 代碼以攔截 console 日誌和處理消息
         let jsCode = """
-            (function() {
-                var console = window.console;
-                if (!console) {
-                    console = {};
-                    window.console = console;
-                }
-                function sendMessageToNative(level, args) {
-                    window.webkit.messageHandlers.consoleHandler.postMessage({ level: level, message: Array.from(args).join(' ') });
-                }
-                var levels = ['log', 'debug', 'info', 'warn', 'error'];
-                for (var i = 0; i < levels.length; i++) {
-                    (function(level) {
-                        var original = console[level];
-                        console[level] = function() {
-                            sendMessageToNative(level, arguments);
-                            if (original) {
-                                original.apply(console, arguments);
-                            }
-                        };
-                    })(levels[i]);
-                }
-            })();
+            // 您的 JavaScript 代碼
             """
         let userScript = WKUserScript(source: jsCode, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         userContentController.addUserScript(userScript)
@@ -59,7 +38,8 @@ struct WebViewContainer: UIViewRepresentable {
 
         config.userContentController = userContentController
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 1, height: 1), configuration: config)
+        webView.isHidden = true
         webView.navigationDelegate = context.coordinator
         webViewModel.webView = webView
         context.coordinator.webView = webView
@@ -76,22 +56,28 @@ struct WebViewContainer: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
         if isProcessing, let image = inputImage, let task = currentTask {
-            guard let imageData = image.jpegData(compressionQuality: 1) else {
-                print("無法轉換圖片為JPEG數據")
-                self.outputText = "錯誤: 無法處理圖片。"
-                self.isProcessing = false
-                return
-            }
-            let base64String = imageData.base64EncodedString()
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard let imageData = image.jpegData(compressionQuality: 1) else {
+                    DispatchQueue.main.async {
+                        print("無法轉換圖片為JPEG數據")
+                        self.outputText = "錯誤: 無法處理圖片。"
+                        self.isProcessing = false
+                    }
+                    return
+                }
+                let base64String = imageData.base64EncodedString()
 
-            let js = "processImageData('\(base64String)')"
-            uiView.evaluateJavaScript(js) { _, error in
-                if let error = error {
-                    print("evaluateJavaScript 錯誤: \(error.localizedDescription)")
-                    self.outputText = "錯誤: \(error.localizedDescription)"
-                    self.isProcessing = false
-                } else {
-                    print("evaluateJavaScript 成功執行")
+                let js = "processImageData('\(base64String)')"
+                DispatchQueue.main.async {
+                    uiView.evaluateJavaScript(js) { _, error in
+                        if let error = error {
+                            print("evaluateJavaScript 錯誤: \(error.localizedDescription)")
+                            self.outputText = "錯誤: \(error.localizedDescription)"
+                            self.isProcessing = false
+                        } else {
+                            print("evaluateJavaScript 成功執行")
+                        }
+                    }
                 }
             }
         }
@@ -111,7 +97,8 @@ struct WebViewContainer: UIViewRepresentable {
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             if message.name == "callbackHandler", let predictionsString = message.body as? String {
-                DispatchQueue.main.async {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    // 後台線程處理數據
                     self.parent.isProcessing = false
                     guard let currentTask = self.parent.currentTask else {
                         print("當前沒有任務")
@@ -158,38 +145,42 @@ struct WebViewContainer: UIViewRepresentable {
 
                         print("條件達成: \(expectedConditionsMet)")
 
-                        if expectedConditionsMet {
-                            // 設置 predictedLabels 為達成的條件
-                            let metLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
-                                if let sortedIndex = sortedKeys.firstIndex(of: key),
-                                   sortedIndex < adjustedPredictions.count,
-                                   adjustedPredictions[sortedIndex] >= 0.5 {
-                                    return (key, labels[sortedIndex])
+                        DispatchQueue.main.async {
+                            if expectedConditionsMet {
+                                // 設置 predictedLabels 為達成的條件
+                                let metLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
+                                    if let sortedIndex = sortedKeys.firstIndex(of: key),
+                                       sortedIndex < adjustedPredictions.count,
+                                       adjustedPredictions[sortedIndex] >= 0.5 {
+                                        return (key, labels[sortedIndex])
+                                    }
+                                    return nil
                                 }
-                                return nil
-                            }
-                            self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: metLabels)
-                            print("達成的標籤: \(self.parent.predictedLabels ?? [:])")
-                            // 通知 ContentView 條件達成
-                            NotificationCenter.default.post(name: .taskConditionMet, object: currentTask.name)
-                        } else {
-                            // 設置 predictedLabels 為當前偵測到的所有標籤
-                            let detectedLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
-                                if let sortedIndex = sortedKeys.firstIndex(of: key),
-                                   sortedIndex < adjustedPredictions.count,
-                                   adjustedPredictions[sortedIndex] >= 0.5 {
-                                    return (key, labels[sortedIndex])
+                                self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: metLabels)
+                                print("達成的標籤: \(self.parent.predictedLabels ?? [:])")
+                                // 通知 ContentView 條件達成
+                                NotificationCenter.default.post(name: .taskConditionMet, object: currentTask.name)
+                            } else {
+                                // 設置 predictedLabels 為當前檢測到的所有標籤
+                                let detectedLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
+                                    if let sortedIndex = sortedKeys.firstIndex(of: key),
+                                       sortedIndex < adjustedPredictions.count,
+                                       adjustedPredictions[sortedIndex] >= 0.5 {
+                                        return (key, labels[sortedIndex])
+                                    }
+                                    return nil
                                 }
-                                return nil
+                                self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: detectedLabels)
+                                print("檢測到的標籤: \(self.parent.predictedLabels ?? [:])")
+                                // 通知 ContentView 條件未達成
+                                NotificationCenter.default.post(name: .taskConditionNotMet, object: nil)
                             }
-                            self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: detectedLabels)
-                            print("偵測到的標籤: \(self.parent.predictedLabels ?? [:])")
-                            // 通知 ContentView 條件未達成
-                            NotificationCenter.default.post(name: .taskConditionNotMet, object: nil)
                         }
                     } else {
                         print("預測數據不足")
-                        self.parent.outputText = "預測數據不足"
+                        DispatchQueue.main.async {
+                            self.parent.outputText = "預測數據不足"
+                        }
                     }
                 }
             }

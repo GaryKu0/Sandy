@@ -23,9 +23,23 @@ struct SideSheet: View {
         VStack(spacing: 20) {
             // 嵌入式 YouTube 影片播放器
             YouTubePlayerView(videoID: "izCU-ynqi5Q") // 實際的 YouTube 影片 ID
-                .frame(height: 240) // 調整影片高度
+                .frame(height: 220) // 調整影片高度
                 .cornerRadius(20)
                 .padding(.horizontal, 16)
+
+            // 倒數計時顯示
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colorScheme == .dark ? .white : .black)
+                        .opacity(0.1)
+                        .frame(height: 80)
+                    Text(isCountingDown && countdown > 0 ? "\(countdown) 秒" : "")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                }
+                .padding(.horizontal, 16)
+            }
 
             HStack {
                 ZStack {
@@ -81,7 +95,7 @@ struct SideSheet: View {
 
             HStack {
                 AnimatedButton(
-                    text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
+                    text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啓",
                     action: {
                         isAutoProcessingEnabled.toggle()
                     },
@@ -101,7 +115,6 @@ struct SideSheet: View {
         .background(
             RoundedRectangle(cornerRadius: 36)
                 .fill(colorScheme == .dark ? Color.black.opacity(0.8) : Color.white.opacity(0.8))
-                .shadow(radius: 10)
         )
         .padding(.horizontal, 16)
         .edgesIgnoringSafeArea(.all)

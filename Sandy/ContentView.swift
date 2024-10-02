@@ -6,7 +6,7 @@ import WhatsNewKit
 
 // 主視圖 ContentView
 struct ContentView: View {
-    // MARK: - 狀態變數
+    // MARK: - 狀態變量
     @State private var showSettings = false
     @State private var inputImage: UIImage?
     @State private var outputText: String = "準備中..."
@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var predictedLabels: [Int: String]? = nil
     @State private var currentTask: Task?
     @State private var taskIndex: Int = 0
-    @State private var countdown: Int = 0 // 倒數計時變數
+    @State private var countdown: Int = 0 // 倒數計時變量
     @State private var isCountingDown: Bool = false // 控制倒數狀態
     @State private var taskCompleted: Bool = false // 控制任務完成狀態
     @State private var timerCancellable: AnyCancellable?
@@ -67,7 +67,7 @@ struct ContentView: View {
 
     @StateObject var webViewModel = WebViewModel()
 
-    // 定義 `WhatsNew` 資料
+    // 定義 `WhatsNew` 數據
     var whatsNew: WhatsNew = WhatsNew(
         title: "珊迪的新冒險 🐿️🏄‍♀️",
         features: [
@@ -79,12 +79,12 @@ struct ContentView: View {
             .init(
                 image: .init(systemName: "timer", foregroundColor: .green),
                 title: "清脆又大聲的倒數",
-                subtitle: "清脆又大聲的倒數讓你沒看著螢幕也知道自己做對了！"
+                subtitle: "清脆又大聲的倒數讓你沒看着屏幕也知道自己做對了！"
             ),
             .init(
                 image: .init(systemName: "list.bullet.rectangle.portrait", foregroundColor: .purple),
                 title: "清晰可見的步驟",
-                subtitle: "保持你健康的秘訣都清清楚楚的寫在螢幕上"
+                subtitle: "保持你健康的秘訣都清清楚楚的寫在屏幕上"
             ),
             .init(
                 image: .init(systemName: "person.2.fill", foregroundColor: .orange),
@@ -107,7 +107,7 @@ struct ContentView: View {
     @State private var isWhatsNewPresented = true // 控制 WhatsNewSheet 的顯示狀態
     @State private var isBottomSheetPresented = false // 控制 BottomSheet 的顯示狀態
 
-    // 環境變數，用於檢測裝置和尺寸類型
+    // 環境變量，用於檢測設備和尺寸類型
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var deviceOrientation = UIDevice.current.orientation
@@ -123,6 +123,7 @@ struct ContentView: View {
                                 // 相機背景視圖
                                 CameraView(capturedImage: $inputImage)
                                     .edgesIgnoringSafeArea(.all)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity) // 確保填滿空間
                                     .onAppear {
                                         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
                                     }
@@ -133,16 +134,14 @@ struct ContentView: View {
                                         deviceOrientation = UIDevice.current.orientation
                                     }
 
-                                // 倒數計時大字顯示
-                                if isCountingDown && countdown > 0 {
-                                    Text("\(countdown)")
-                                        .font(.system(size: 100, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .animation(.easeInOut, value: countdown)
-                                        .transition(.opacity)
-                                }
+                                // 倒數計時大字顯示（始終存在，使用 opacity 控制顯示）
+                                Text("\(countdown)")
+                                    .font(.system(size: 100, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .opacity(isCountingDown && countdown > 0 && UIDevice.current.userInterfaceIdiom != .pad ? 1 : 0)
+                                    .animation(.easeInOut, value: countdown)
                             }
-                            .frame(width: geometry.size.width * 0.6)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
 
                             Spacer()
                         }
@@ -164,7 +163,7 @@ struct ContentView: View {
                         )
                         .frame(width: geometry.size.width * 0.35)
                         .padding(.trailing, 16)
-                        .padding(.leading, geometry.size.width * 0.65 + 16)
+                        .padding(.leading, geometry.size.width * 0.65 - 16)
                         .padding(.vertical, 16)
                     }
                 } else {
@@ -173,17 +172,16 @@ struct ContentView: View {
                         // 相機背景視圖
                         CameraView(capturedImage: $inputImage)
                             .edgesIgnoringSafeArea(.all)
+                            .frame(minWidth: .infinity, minHeight: .infinity) // 確保填滿空間
 
-                        // 倒數計時大字顯示
-                        if isCountingDown && countdown > 0 {
-                            Text("\(countdown)")
-                                .font(.system(size: 100, weight: .bold))
-                                .foregroundColor(.white)
-                                .animation(.easeInOut, value: countdown)
-                                .transition(.opacity)
-                        }
+                        // 倒數計時大字顯示（始終存在，使用 opacity 控制顯示）
+                        Text("\(countdown)")
+                            .font(.system(size: 100, weight: .bold))
+                            .foregroundColor(.white)
+                            .opacity(isCountingDown && countdown > 0 ? 1 : 0)
+                            .animation(.easeInOut, value: countdown)
 
-                        // 右上角的設定按鈕
+                        // 右上角的設置按鈕
                         VStack {
                             HStack {
                                 Spacer()
@@ -302,13 +300,14 @@ struct ContentView: View {
                 currentTask: $currentTask,
                 tasks: $tasks
             )
+            .hidden()
             .frame(width: 0, height: 0)
         }
         .environmentObject(webViewModel)
         // 監聽 showSettings 的變化來控制 BottomSheet
         .onChange(of: showSettings) { newValue in
             if newValue {
-                // SettingsView 被打開，收合 BottomSheet
+                // SettingsView 被打開，收起 BottomSheet
                 isBottomSheetPresented = false
             } else {
                 // SettingsView 被關閉，展開 BottomSheet（僅在非 iPad 上）
