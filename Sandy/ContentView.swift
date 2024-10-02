@@ -172,7 +172,7 @@ struct ContentView: View {
                         // 相機背景視圖
                         CameraView(capturedImage: $inputImage)
                             .edgesIgnoringSafeArea(.all)
-                            .frame(minWidth: .infinity, minHeight: .infinity) // 確保填滿空間
+                            .frame(maxWidth: .infinity, maxHeight: .infinity) // 確保填滿空間
 
                         // 倒數計時大字顯示（始終存在，使用 opacity 控制顯示）
                         Text("\(countdown)")
