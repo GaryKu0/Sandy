@@ -67,15 +67,15 @@ struct CameraView: UIViewRepresentable {
         if let connection = previewLayer.connection {
             switch UIDevice.current.orientation {
             case .portrait:
-                connection.videoOrientation = .portrait
+                connection.videoOrientation = .landscapeLeft
             case .landscapeRight:
                 connection.videoOrientation = .landscapeLeft
             case .landscapeLeft:
                 connection.videoOrientation = .landscapeRight
             case .portraitUpsideDown:
-                connection.videoOrientation = .portraitUpsideDown
+                connection.videoOrientation = .landscapeRight
             default:
-                connection.videoOrientation = .portrait
+                connection.videoOrientation = .landscapeLeft
             }
             previewLayer.frame = UIScreen.main.bounds
         }
