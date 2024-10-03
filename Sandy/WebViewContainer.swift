@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 import AVFoundation
 
-// Array 扩展，安全访问元素
+// Array 擴展，安全訪問元素
 extension Array {
     subscript(safe index: Int) -> Element? {
         return indices.contains(index) ? self[index] : nil
@@ -15,7 +15,7 @@ struct WebViewContainer: UIViewRepresentable {
     @Binding var isProcessing: Bool
     @Binding var predictedLabels: [Int: String]?
     @Binding var currentTask: Task?
-    @Binding var tasks: [Task] // 传递任务列表
+    @Binding var tasks: [Task] // 傳遞任務列表
 
     @EnvironmentObject var webViewModel: WebViewModel
 
@@ -27,7 +27,7 @@ struct WebViewContainer: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         let userContentController = WKUserContentController()
 
-        // 注入 JavaScript 代码以拦截 console 日志和处理消息
+        // 注入 JavaScript 代碼以攔截 console 日誌和處理消息
         let jsCode = """
             (function() {
                 var console = window.console;
@@ -64,7 +64,7 @@ struct WebViewContainer: UIViewRepresentable {
         webViewModel.webView = webView
         context.coordinator.webView = webView
 
-        // 加载本地 HTML 文件（假设有一个 index.html 在项目中）
+        // 加載本地 HTML 文件（假設有一個 index.html 在項目中）
         if let htmlPath = Bundle.main.path(forResource: "index", ofType: "html") {
             let url = URL(fileURLWithPath: htmlPath)
             let readAccessURL = url.deletingLastPathComponent()
@@ -79,8 +79,8 @@ struct WebViewContainer: UIViewRepresentable {
             DispatchQueue.global(qos: .userInitiated).async {
                 guard let imageData = image.jpegData(compressionQuality: 1) else {
                     DispatchQueue.main.async {
-                        print("无法转换图片为JPEG数据")
-                        self.outputText = "错误: 无法处理图片。"
+                        print("無法轉換圖片為JPEG數據")
+                        self.outputText = "錯誤: 無法處理圖片。"
                         self.isProcessing = false
                     }
                     return
@@ -91,19 +91,19 @@ struct WebViewContainer: UIViewRepresentable {
         }
     }
 
-    // 新增的函数，用于传递参数给 JavaScript
+    // 新增的函數，用於傳遞參數給 JavaScript
     func processImageInJavaScript(base64Image: String, mediapipeTasks: [String], modelName: String) {
         let tasksString = mediapipeTasks.joined(separator: ",")
-        // 注意在这里传递了 mediapipeTasks 和 modelName
+        // 注意在這裏傳遞了 mediapipeTasks 和 modelName
         let jsFunction = "processImageData('\(base64Image)', '\(tasksString)', '\(modelName)')"
         DispatchQueue.main.async {
             webViewModel.webView?.evaluateJavaScript(jsFunction) { (result, error) in
                 if let error = error {
-                    print("evaluateJavaScript 错误: \(error.localizedDescription)")
-                    self.outputText = "错误: \(error.localizedDescription)"
+                    print("evaluateJavaScript 錯誤: \(error.localizedDescription)")
+                    self.outputText = "錯誤: \(error.localizedDescription)"
                     self.isProcessing = false
                 } else {
-                    print("evaluateJavaScript 成功执行")
+                    print("evaluateJavaScript 成功執行")
                 }
             }
         }
@@ -118,7 +118,7 @@ struct WebViewContainer: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            print("WebView 加载完成")
+            print("WebView 加載完成")
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -132,7 +132,7 @@ struct WebViewContainer: UIViewRepresentable {
                 DispatchQueue.main.async {
                     self.parent.isProcessing = false
                     guard let currentTask = self.parent.currentTask else {
-                        print("当前没有任务")
+                        print("當前沒有任務")
                         return
                     }
 
@@ -140,8 +140,8 @@ struct WebViewContainer: UIViewRepresentable {
                     let sortedKeys = currentTask.indexToLabelMap.keys.sorted()
                     let labels = sortedKeys.map { currentTask.indexToLabelMap[$0] ?? "未知" }
 
-                    print("模型输出值: \(predictionsArray)")
-                    print("标签对应: \(labels)")
+                    print("模型輸出值: \(predictionsArray)")
+                    print("標籤對應: \(labels)")
 
                     if predictionsArray.count >= sortedKeys.count {
                         var adjustedPredictions = [Double]()
@@ -162,9 +162,9 @@ struct WebViewContainer: UIViewRepresentable {
                             }
                         }
 
-                        print("调整后的预测值: \(adjustedPredictions)")
+                        print("調整後的預測值: \(adjustedPredictions)")
 
-                        // 检查条件是否达成
+                        // 檢查條件是否達成
                         let expectedConditionsMet = currentTask.expectedConditions.allSatisfy { (key, condition) in
                             if let sortedIndex = sortedKeys.firstIndex(of: key),
                                sortedIndex < adjustedPredictions.count,
@@ -174,10 +174,10 @@ struct WebViewContainer: UIViewRepresentable {
                             return false
                         }
 
-                        print("条件达成: \(expectedConditionsMet)")
+                        print("條件達成: \(expectedConditionsMet)")
 
                         if expectedConditionsMet {
-                            // 设置 predictedLabels 为达成的条件
+                            // 設置 predictedLabels 為達成的條件
                             let metLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
                                 if let sortedIndex = sortedKeys.firstIndex(of: key),
                                    sortedIndex < adjustedPredictions.count,
@@ -187,11 +187,11 @@ struct WebViewContainer: UIViewRepresentable {
                                 return nil
                             }
                             self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: metLabels)
-                            print("达成的标签: \(self.parent.predictedLabels ?? [:])")
-                            // 通知 ContentView 条件达成
+                            print("達成的標籤: \(self.parent.predictedLabels ?? [:])")
+                            // 通知 ContentView 條件達成
                             NotificationCenter.default.post(name: .taskConditionMet, object: currentTask.name)
                         } else {
-                            // 设置 predictedLabels 为当前检测到的所有标签
+                            // 設置 predictedLabels 為當前檢測到的所有標籤
                             let detectedLabels = currentTask.expectedConditions.compactMap { (key, condition) -> (Int, String)? in
                                 if let sortedIndex = sortedKeys.firstIndex(of: key),
                                    sortedIndex < adjustedPredictions.count,
@@ -201,13 +201,13 @@ struct WebViewContainer: UIViewRepresentable {
                                 return nil
                             }
                             self.parent.predictedLabels = Dictionary(uniqueKeysWithValues: detectedLabels)
-                            print("检测到的标签: \(self.parent.predictedLabels ?? [:])")
-                            // 通知 ContentView 条件未达成
+                            print("檢測到的標籤: \(self.parent.predictedLabels ?? [:])")
+                            // 通知 ContentView 條件未達成
                             NotificationCenter.default.post(name: .taskConditionNotMet, object: nil)
                         }
                     } else {
-                        print("预测数据不足")
-                        self.parent.outputText = "预测数据不足"
+                        print("預測數據不足")
+                        self.parent.outputText = "預測數據不足"
                     }
                 }
             }

@@ -34,7 +34,7 @@ struct ContentView: View {
             modelName: "facing-model",
             icon: "arrowshape.left.fill",
             indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.4],
+            multipliers: ["left": 0.9],
             mediapipeTasks: ["face"]
         ),
         Task(
