@@ -34,7 +34,8 @@ struct ContentView: View {
             modelName: "facing-model",
             icon: "arrowshape.left.fill",
             indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.4]
+            multipliers: ["front": 1.4],
+            mediapipeTasks: ["face"]
         ),
         Task(
             name: "頭部回正",
@@ -43,7 +44,8 @@ struct ContentView: View {
             modelName: "facing-model",
             icon: "face.smiling.inverse",
             indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.5]
+            multipliers: ["front": 1.5],
+            mediapipeTasks: ["face"]
         ),
         Task(
             name: "頭部向右轉",
@@ -52,7 +54,8 @@ struct ContentView: View {
             modelName: "facing-model",
             icon: "arrowshape.right.fill",
             indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.3]
+            multipliers: ["front": 1.3],
+            mediapipeTasks: ["face"]
         ),
         Task(
             name: "向上看",
@@ -61,7 +64,8 @@ struct ContentView: View {
             modelName: "facing-model",
             icon: "arrow.up.circle.fill",
             indexToLabelMap: [5: "down", 6: "unknown", 7: "top"],
-            multipliers: ["top": 1.4]
+            multipliers: ["top": 1.4],
+            mediapipeTasks: ["face"]
         )
     ]
 

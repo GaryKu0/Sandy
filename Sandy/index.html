@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Face Landmarker</title>
+    <title>Mediapipe Landmarker</title>
     <style>
         /* Hide the Canvas element initially */
         #outputCanvas {
@@ -17,19 +17,23 @@
     <!-- Include TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script type="module">
-        // Import Mediapipe Tasks Vision module
-        import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+        // Import Mediapipe Tasks
+        import { FaceLandmarker, PoseLandmarker, HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
         let faceLandmarker = null;
-        let models = {}; // Object to hold multiple models
+        let poseLandmarker = null;
+        let handLandmarker = null;
+        let models = {};
 
-        // Create FaceLandmarker instance
-        async function createFaceLandmarker() {
-            console.log('Creating FaceLandmarker...');
+        // Create Mediapipe Landmarker instances
+        async function createLandmarkers() {
+            console.log('Creating Mediapipe Landmarkers...');
             try {
                 const vision = await FilesetResolver.forVisionTasks(
                     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
                 );
+
+                // Create FaceLandmarker
                 faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
                     baseOptions: {
                         modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
@@ -38,39 +42,37 @@
                     runningMode: 'IMAGE',
                     numFaces: 1,
                 });
-                console.log('FaceLandmarker created');
+
+                // Create PoseLandmarker
+                poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task',
+                        delegate: 'GPU'
+                    },
+                    runningMode: 'IMAGE',
+                });
+
+                // Create HandLandmarker
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+                        delegate: 'GPU'
+                    },
+                    runningMode: 'IMAGE',
+                    numHands: 1,
+                });
+
+                console.log('Mediapipe Landmarkers created');
             } catch (error) {
-                console.error('Error creating FaceLandmarker:', error);
+                console.error('Error creating Mediapipe Landmarkers:', error);
             }
         }
 
-        // Load models (you can customize this function to load different models)
+        // Load custom models
         async function loadModels() {
             console.log('Loading custom models...');
-            const modelNames = ['facing-model']; // List of model names
-            for (let modelName of modelNames) {
-                const indexedDBUrl = `indexeddb://${modelName}`;
-                try {
-                    // Try to load the model from IndexedDB
-                    let model = await tf.loadGraphModel(indexedDBUrl);
-                    console.log(`Custom model ${modelName} loaded successfully from IndexedDB`);
-                    models[modelName] = model;
-                } catch (error) {
-                    console.warn(`Could not load model ${modelName} from IndexedDB, loading from network...`, error);
-                    try {
-                        // Load from the network (replace with actual URL)
-                        const networkModelUrl = `https://nkust.suko.zip/models/${modelName}/model.json`;
-                        let model = await tf.loadGraphModel(networkModelUrl);
-                        console.log(`Custom model ${modelName} loaded successfully from network`);
-                        // Save the model to IndexedDB for offline use
-                        await model.save(indexedDBUrl);
-                        console.log(`Custom model ${modelName} saved to IndexedDB`);
-                        models[modelName] = model;
-                    } catch (networkError) {
-                        console.error(`Error loading custom model ${modelName} from network:`, networkError);
-                    }
-                }
-            }
+            // You can load models as needed based on the modelName
+            // For this example, we'll load models dynamically in runModel()
         }
 
         // Preprocess landmarks
@@ -79,27 +81,43 @@
             for (let i = 0; i < landmarks.length; i++) {
                 input.push(landmarks[i].x);
                 input.push(landmarks[i].y);
-                input.push(landmarks[i].z);
+                input.push(landmarks[i].z || 0);
             }
 
-            while (input.length < 468 * 3) {
-                input.push(0, 0, 0);
-            }
-
-            if (input.length > 468 * 3) {
-                input.length = 468 * 3;
-            }
-
-            const inputTensor = tf.tensor(input, [1, 468 * 3]);
+            const inputTensor = tf.tensor(input, [1, input.length]);
             return inputTensor;
         }
 
         // Run model and get predictions
-        function runModel(inputTensor, modelName) {
+        async function runModel(inputTensor, modelName) {
             let model = models[modelName];
             if (!model) {
-                console.error(`Custom model ${modelName} not loaded`);
-                return;
+                // Load the model dynamically
+                try {
+                    const indexedDBUrl = `indexeddb://${modelName}`;
+                    try {
+                        model = await tf.loadGraphModel(indexedDBUrl);
+                        console.log(`Custom model ${modelName} loaded successfully from IndexedDB`);
+                    } catch (error) {
+                        console.warn(`Could not load model ${modelName} from IndexedDB, loading from network...`, error);
+                        try {
+                            // Load from the network (replace with your actual URL)
+                            const networkModelUrl = `https://your.model.server/path/to/${modelName}/model.json`;
+                            model = await tf.loadGraphModel(networkModelUrl);
+                            console.log(`Custom model ${modelName} loaded successfully from network`);
+                            // Save the model to IndexedDB for offline use
+                            await model.save(indexedDBUrl);
+                            console.log(`Custom model ${modelName} saved to IndexedDB`);
+                        } catch (networkError) {
+                            console.error(`Error loading custom model ${modelName} from network:`, networkError);
+                            return null;
+                        }
+                    }
+                    models[modelName] = model;
+                } catch (error) {
+                    console.error(`Error loading model ${modelName}:`, error);
+                    return null;
+                }
             }
 
             try {
@@ -125,49 +143,75 @@
                 if (error.stack) {
                     console.error('Stack trace:', error.stack);
                 }
+                return null;
             }
         }
 
         // Main processing function
-        async function processImage(imageData, isShowFaceMesh) {
-            if (!faceLandmarker || Object.keys(models).length === 0) {
-                console.error('FaceLandmarker or custom models not initialized');
+        async function processImage(imageData, mediapipeTasks, modelName) {
+            if (!faceLandmarker || !poseLandmarker || !handLandmarker) {
+                console.error('Landmarkers not initialized');
                 return null;
             }
 
             try {
-                const results = await faceLandmarker.detect(imageData);
+                let combinedLandmarks = [];
 
-                if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-                    const landmarks = results.faceLandmarks[0];
-                    const limitedLandmarks = landmarks.slice(0, 468);
+                for (let task of mediapipeTasks) {
+                    let landmarks = null;
 
-                    // Preprocess landmarks
-                    const inputTensor = preprocessLandmarks(limitedLandmarks);
-
-                    // Run models and collect predictions
-                    let allPredictions = [];
-                    for (let modelName in models) {
-                        const predictions = runModel(inputTensor, modelName);
-                        if (predictions) {
-                            allPredictions = allPredictions.concat(predictions);
+                    if (task === "face") {
+                        const results = await faceLandmarker.detect(imageData);
+                        if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+                            landmarks = results.faceLandmarks[0];
+                            // Lock to 468 landmarks for face
+                            landmarks = landmarks.slice(0, 468);
+                        } else {
+                            console.log('No face landmarks detected.');
+                            return null;
                         }
+                    } else if (task === "pose") {
+                        const results = await poseLandmarker.detect(imageData);
+                        if (results.landmarks && results.landmarks.length > 0) {
+                            landmarks = results.landmarks[0];
+                        } else {
+                            console.log('No pose landmarks detected.');
+                            return null;
+                        }
+                    } else if (task === "hand") {
+                        const results = await handLandmarker.detect(imageData);
+                        if (results.handLandmarks && results.handLandmarks.length > 0) {
+                            landmarks = results.handLandmarks[0];
+                        } else {
+                            console.log('No hand landmarks detected.');
+                            return null;
+                        }
+                    } else {
+                        console.error('Invalid mediapipeTask:', task);
+                        return null;
                     }
 
-                    // Return all predictions
-                    return allPredictions;
-                } else {
-                    console.log('No face landmarks detected.');
-                    return null;
+                    combinedLandmarks = combinedLandmarks.concat(landmarks);
                 }
+
+                // Preprocess combined landmarks
+                const inputTensor = preprocessLandmarks(combinedLandmarks);
+
+                // Run the model
+                const predictions = await runModel(inputTensor, modelName);
+
+                return predictions;
+
             } catch (error) {
-                console.error('Error during faceLandmarker.detect:', error);
+                console.error('Error during detection:', error);
                 return null;
             }
         }
 
         // Function exposed to Swift to process image data
-        function processImageData(base64Image) {
+        function processImageData(base64Image, mediapipeTasksString, modelName) {
+            const mediapipeTasks = mediapipeTasksString.split(',').map(task => task.trim());
+
             try {
                 const image = new Image();
                 image.src = 'data:image/jpeg;base64,' + base64Image;
@@ -185,7 +229,7 @@
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
                     try {
-                        const predictions = await processImage(imageData);
+                        const predictions = await processImage(imageData, mediapipeTasks, modelName);
 
                         if (predictions) {
                             window.webkit.messageHandlers.callbackHandler.postMessage(predictions.join(','));
@@ -208,16 +252,18 @@
             }
         }
 
-        // Initialization function
+        // Initialize the application
         async function initialize() {
             console.log('Initializing...');
-            await createFaceLandmarker();
-            await loadModels();
+            await createLandmarkers();
+            // We can load models when needed in runModel()
             console.log('Initialization complete');
         }
 
         // Initialize
         initialize();
+
+        // Expose the processImageData function to the window object
         window.processImageData = processImageData;
     </script>
 </body>
