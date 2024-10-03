@@ -1,243 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Mediapipe Landmarker</title>
     <style>
-        /* Hide the Canvas element initially */
         #outputCanvas {
             display: none;
         }
     </style>
 </head>
-
 <body>
     <canvas id="outputCanvas"></canvas>
-    <!-- Include TensorFlow.js -->
+
+    <!-- 引入 TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script type="module">
         // Import Mediapipe Tasks
-        import { FaceLandmarker, PoseLandmarker, HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+        import { FaceLandmarker, HandLandmarker, PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-        let faceLandmarker = null;
-        let poseLandmarker = null;
-        let handLandmarker = null;
+        let vision = null;
+        let landmarkers = {};
         let models = {};
 
-        // Create Mediapipe Landmarker instances
-        async function createLandmarkers() {
-            console.log('Creating Mediapipe Landmarkers...');
+        // 捕获全局错误并传递给 Swift
+        window.onerror = function (message, source, lineno, colno, error) {
+            var errorMessage = `${message} at ${source}:${lineno}:${colno}`;
+            console.error('Global error caught: ', errorMessage);
+            window.webkit.messageHandlers.consoleHandler.postMessage('Error: ' + errorMessage);
+        };
+
+        // 初始化
+        async function initialize() {
+            console.log('Initializing...');
             try {
-                const vision = await FilesetResolver.forVisionTasks(
+                vision = await FilesetResolver.forVisionTasks(
                     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
                 );
-
-                // Create FaceLandmarker
-                faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-                        delegate: 'GPU'
-                    },
-                    runningMode: 'IMAGE',
-                    numFaces: 1,
-                });
-
-                // Create PoseLandmarker
-                poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task',
-                        delegate: 'GPU'
-                    },
-                    runningMode: 'IMAGE',
-                });
-
-                // Create HandLandmarker
-                handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-                        delegate: 'GPU'
-                    },
-                    runningMode: 'IMAGE',
-                    numHands: 1,
-                });
-
-                console.log('Mediapipe Landmarkers created');
+                console.log('Vision tasks fileset resolved.');
             } catch (error) {
-                console.error('Error creating Mediapipe Landmarkers:', error);
+                console.error('Error resolving vision tasks:', error);
+                window.webkit.messageHandlers.consoleHandler.postMessage('Error: ' + error.message);
+            }
+            console.log('Initialization complete');
+        }
+
+        // 获取或创建 Landmarker
+        async function getLandmarker(taskName) {
+            if (landmarkers[taskName]) {
+                return landmarkers[taskName];
+            } else {
+                let landmarker = null;
+                try {
+                    switch(taskName) {
+                        case 'face':
+                            // 創建 FaceLandmarker
+                            landmarker = await FaceLandmarker.createFromOptions(vision, {
+                                baseOptions: {
+                                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                                    delegate: 'GPU'
+                                },
+                                runningMode: 'IMAGE',
+                                numFaces: 1,
+                            });
+                            break;
+                        case 'hand':
+                            // 創建 HandLandmarker
+                            landmarker = await HandLandmarker.createFromOptions(vision, {
+                                baseOptions: {
+                                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+                                    delegate: 'GPU'
+                                },
+                                runningMode: 'IMAGE',
+                                numHands: 1,
+                            });
+                            break;
+                        case 'pose':
+                            // 創建 PoseLandmarker
+                            landmarker = await PoseLandmarker.createFromOptions(vision, {
+                                baseOptions: {
+                                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker/float16/1/pose_landmarker.task',
+                                    delegate: 'GPU'
+                                },
+                                runningMode: 'IMAGE',
+                            });
+                            break;
+                        default:
+                            throw new Error(`Unknown mediapipe task: ${taskName}`);
+                    }
+                    if (landmarker) {
+                        landmarkers[taskName] = landmarker;
+                        return landmarker;
+                    } else {
+                        throw new Error(`Failed to create landmarker for task: ${taskName}`);
+                    }
+                } catch (error) {
+                    console.error(`Error creating landmarker for task ${taskName}:`, error);
+                    window.webkit.messageHandlers.consoleHandler.postMessage(`Error creating landmarker for task ${taskName}: ${error.message}`);
+                    return null;
+                }
             }
         }
 
-        // Load custom models
-        async function loadModels() {
-            console.log('Loading custom models...');
-            // You can load models as needed based on the modelName
-            // For this example, we'll load models dynamically in runModel()
+        // 主处理函数
+        async function processImage(imageData, mediapipeTasks, modelName) {
+            if (!vision) {
+                console.error('Vision not initialized');
+                window.webkit.messageHandlers.consoleHandler.postMessage('Error: Vision not initialized');
+                return null;
+            }
+
+            try {
+                // 加载模型以获取输入形状
+                let model = models[modelName];
+                if (!model) {
+                    console.log(`Loading model: ${modelName}`);
+                    model = await tf.loadGraphModel(`https://nkust.suko.zip/models/${modelName}/model.json`);
+                    models[modelName] = model;
+                    console.log(`Model ${modelName} loaded`);
+                } else {
+                    console.log(`Model ${modelName} loaded from cache`);
+                }
+
+                // 获取模型的输入形状
+                const modelInputShape = model.inputs[0].shape;
+                console.log('Model input shape:', modelInputShape);
+                const expectedTotalFeatures = modelInputShape[1];
+
+                let allLandmarks = [];
+
+                // 按照指定的任务顺序收集地标点
+                for (const taskName of mediapipeTasks) {
+                    const landmarker = await getLandmarker(taskName);
+                    if (!landmarker) {
+                        console.error(`Failed to get landmarker for task: ${taskName}`);
+                        continue;
+                    }
+
+                    let results = null;
+                    switch(taskName) {
+                        case 'face':
+                            results = await landmarker.detect(imageData);
+                            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+                                console.log(`Detected ${results.faceLandmarks.length} face landmarks`);
+                                allLandmarks.push(...results.faceLandmarks[0]); // 468個地標點
+                            } else {
+                                console.warn('No face landmarks detected.');
+                            }
+                            break;
+                        case 'hand':
+                            results = await landmarker.detect(imageData);
+                            if (results.handLandmarks && results.handLandmarks.length > 0) {
+                                console.log(`Detected ${results.handLandmarks.length} hand(s) landmarks`);
+                                allLandmarks.push(...results.handLandmarks[0]); // 每只手21个地标点
+                            } else {
+                                console.warn('No hand landmarks detected.');
+                            }
+                            break;
+                        case 'pose':
+                            results = await landmarker.detect(imageData);
+                            if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+                                console.log(`Detected pose landmarks`);
+                                allLandmarks.push(...results.poseLandmarks[0]); // 33個地標點
+                            } else {
+                                console.warn('No pose landmarks detected.');
+                            }
+                            break;
+                        default:
+                            throw new Error(`Unknown mediapipe task: ${taskName}`);
+                    }
+                }
+
+                if (allLandmarks.length > 0) {
+                    console.log(`Total landmarks collected: ${allLandmarks.length}`);
+                    const inputTensor = preprocessLandmarks(allLandmarks, expectedTotalFeatures);
+                    console.log(`Input tensor shape: ${inputTensor.shape}`);
+                    return await runModelWithModel(inputTensor, model);
+                } else {
+                    console.warn('No landmarks collected.');
+                    window.webkit.messageHandlers.consoleHandler.postMessage('Error: No landmarks collected');
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error during image processing:', error);
+                window.webkit.messageHandlers.consoleHandler.postMessage('Error during image processing: ' + error.message);
+                return null;
+            }
         }
 
-        // Preprocess landmarks
-        function preprocessLandmarks(landmarks) {
+        // 预处理 landmarks
+        function preprocessLandmarks(landmarks, expectedTotalFeatures) {
             const input = [];
+
             for (let i = 0; i < landmarks.length; i++) {
                 input.push(landmarks[i].x);
                 input.push(landmarks[i].y);
                 input.push(landmarks[i].z || 0);
             }
 
-            const inputTensor = tf.tensor(input, [1, input.length]);
-            return inputTensor;
-        }
-
-        // Run model and get predictions
-        async function runModel(inputTensor, modelName) {
-            let model = models[modelName];
-            if (!model) {
-                // Load the model dynamically
-                try {
-                    const indexedDBUrl = `indexeddb://${modelName}`;
-                    try {
-                        model = await tf.loadGraphModel(indexedDBUrl);
-                        console.log(`Custom model ${modelName} loaded successfully from IndexedDB`);
-                    } catch (error) {
-                        console.warn(`Could not load model ${modelName} from IndexedDB, loading from network...`, error);
-                        try {
-                            // Load from the network (replace with your actual URL)
-                            const networkModelUrl = `https://your.model.server/path/to/${modelName}/model.json`;
-                            model = await tf.loadGraphModel(networkModelUrl);
-                            console.log(`Custom model ${modelName} loaded successfully from network`);
-                            // Save the model to IndexedDB for offline use
-                            await model.save(indexedDBUrl);
-                            console.log(`Custom model ${modelName} saved to IndexedDB`);
-                        } catch (networkError) {
-                            console.error(`Error loading custom model ${modelName} from network:`, networkError);
-                            return null;
-                        }
-                    }
-                    models[modelName] = model;
-                } catch (error) {
-                    console.error(`Error loading model ${modelName}:`, error);
-                    return null;
+            // 将输入调整为模型期望的大小
+            if (input.length < expectedTotalFeatures) {
+                // 如果不足，使用0填充
+                while (input.length < expectedTotalFeatures) {
+                    input.push(0);
                 }
+            } else if (input.length > expectedTotalFeatures) {
+                // 如果过多，截断
+                input.splice(expectedTotalFeatures);
             }
 
+            return tf.tensor(input, [1, expectedTotalFeatures]);
+        }
+
+        // 运行模型并获取预测
+        async function runModelWithModel(inputTensor, model) {
             try {
-                const inputName = model.inputs[0].name;
-                const prediction = model.execute({ [inputName]: inputTensor });
-
-                let predictionData;
-                if (Array.isArray(prediction)) {
-                    predictionData = [];
-                    for (let tensor of prediction) {
-                        const data = tensor.dataSync();
-                        predictionData = predictionData.concat(Array.from(data));
-                        tensor.dispose();
-                    }
-                } else {
-                    predictionData = prediction.dataSync();
-                    prediction.dispose();
-                }
-
+                const prediction = model.predict(inputTensor);
+                const predictionData = prediction.dataSync();
+                prediction.dispose();
                 return predictionData;
             } catch (error) {
-                console.error(`Error during model ${modelName} execution:`, error);
-                if (error.stack) {
-                    console.error('Stack trace:', error.stack);
-                }
+                console.error('Error running model:', error);
+                window.webkit.messageHandlers.consoleHandler.postMessage('Error running model: ' + error.message);
                 return null;
             }
         }
 
-        // Main processing function
-        async function processImage(imageData, mediapipeTasks, modelName) {
-            if (!faceLandmarker || !poseLandmarker || !handLandmarker) {
-                console.error('Landmarkers not initialized');
-                return null;
-            }
-
-            try {
-                let combinedLandmarks = [];
-
-                for (let task of mediapipeTasks) {
-                    let landmarks = null;
-
-                    if (task === "face") {
-                        const results = await faceLandmarker.detect(imageData);
-                        if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-                            landmarks = results.faceLandmarks[0];
-                            // Lock to 468 landmarks for face
-                            landmarks = landmarks.slice(0, 468);
-                        } else {
-                            console.log('No face landmarks detected.');
-                            return null;
-                        }
-                    } else if (task === "pose") {
-                        const results = await poseLandmarker.detect(imageData);
-                        if (results.landmarks && results.landmarks.length > 0) {
-                            landmarks = results.landmarks[0];
-                        } else {
-                            console.log('No pose landmarks detected.');
-                            return null;
-                        }
-                    } else if (task === "hand") {
-                        const results = await handLandmarker.detect(imageData);
-                        if (results.handLandmarks && results.handLandmarks.length > 0) {
-                            landmarks = results.handLandmarks[0];
-                        } else {
-                            console.log('No hand landmarks detected.');
-                            return null;
-                        }
-                    } else {
-                        console.error('Invalid mediapipeTask:', task);
-                        return null;
-                    }
-
-                    combinedLandmarks = combinedLandmarks.concat(landmarks);
-                }
-
-                // Preprocess combined landmarks
-                const inputTensor = preprocessLandmarks(combinedLandmarks);
-
-                // Run the model
-                const predictions = await runModel(inputTensor, modelName);
-
-                return predictions;
-
-            } catch (error) {
-                console.error('Error during detection:', error);
-                return null;
-            }
-        }
-
-        // Function exposed to Swift to process image data
+        // Swift 端调用的处理函数
         function processImageData(base64Image, mediapipeTasksString, modelName) {
             const mediapipeTasks = mediapipeTasksString.split(',').map(task => task.trim());
+
+            console.log("Base64 image length:", base64Image.length);
+            console.log("Mediapipe tasks:", mediapipeTasks);
+            console.log("Model name:", modelName);
 
             try {
                 const image = new Image();
                 image.src = 'data:image/jpeg;base64,' + base64Image;
 
                 image.onload = async () => {
+                    console.log('Image loaded successfully, width:', image.width, 'height:', image.height);
                     const canvas = document.createElement('canvas');
                     canvas.width = image.width;
                     canvas.height = image.height;
                     const ctx = canvas.getContext('2d');
-
-                    // Flip the image vertically (Y-axis flip)
                     ctx.scale(1, -1);
                     ctx.drawImage(image, 0, -canvas.height, canvas.width, canvas.height);
 
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    console.log("Image data captured, size:", imageData.data.length);
 
-                    try {
-                        const predictions = await processImage(imageData, mediapipeTasks, modelName);
+                    const predictions = await processImage(imageData, mediapipeTasks, modelName);
 
-                        if (predictions) {
-                            window.webkit.messageHandlers.callbackHandler.postMessage(predictions.join(','));
-                        } else {
-                            window.webkit.messageHandlers.callbackHandler.postMessage('null');
-                        }
-                    } catch (error) {
-                        console.error('Error during image processing:', error);
+                    if (predictions) {
+                        console.log('Predictions:', predictions);
+                        window.webkit.messageHandlers.callbackHandler.postMessage(predictions.join(','));
+                    } else {
+                        console.warn('No predictions received');
                         window.webkit.messageHandlers.callbackHandler.postMessage('null');
                     }
                 };
@@ -252,20 +270,11 @@
             }
         }
 
-        // Initialize the application
-        async function initialize() {
-            console.log('Initializing...');
-            await createLandmarkers();
-            // We can load models when needed in runModel()
-            console.log('Initialization complete');
-        }
-
-        // Initialize
+        // 初始化应用程序
         initialize();
 
-        // Expose the processImageData function to the window object
+        // 将 processImageData 函数暴露到 window 对象
         window.processImageData = processImageData;
     </script>
 </body>
-
 </html>

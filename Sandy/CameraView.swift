@@ -36,8 +36,13 @@ struct CameraView: UIViewRepresentable {
         }
 
         // 開始會話
-        session.startRunning()
-
+//        session.startRunning()
+        
+        // 開始會話
+        DispatchQueue.global(qos: .background).async {
+            session.startRunning()
+        }
+        
         // 在上下文中保存會話和預覽圖層
         context.coordinator.session = session
         context.coordinator.previewLayer = previewLayer
