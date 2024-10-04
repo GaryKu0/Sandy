@@ -114,7 +114,8 @@
                 let model = models[modelName];
                 if (!model) {
                     console.log(`Loading model: ${modelName}`);
-                    model = await tf.loadGraphModel(`https://nkust.suko.zip/models/${modelName}/model.json`);
+                    model = await tf.loadGraphModel(`https://sandy.suko.zip/models/${modelName}/model.json`);
+                    // Moving model to the Sandy official website 👹
                     models[modelName] = model;
                     console.log(`Model ${modelName} loaded`);
                 } else {
