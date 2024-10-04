@@ -4,9 +4,8 @@ import WebKit
 import Combine
 import WhatsNewKit
 
-// 主視圖 ContentView
 struct ContentView: View {
-    // MARK: - 狀態變量
+    // MARK: - State Variables
     @State private var showSettings = false
     @State private var inputImage: UIImage?
     @State private var outputText: String = "準備中..."
@@ -16,58 +15,17 @@ struct ContentView: View {
     @State private var predictedLabels: [Int: String]? = nil
     @State private var currentTask: Task?
     @State private var taskIndex: Int = 0
-    @State private var countdown: Int = 0 // 倒數計時變量
-    @State private var isCountingDown: Bool = false // 控制倒數狀態
-    @State private var taskCompleted: Bool = false // 控制任務完成狀態
+    @State private var countdown: Int = 0 // Countdown variable
+    @State private var isCountingDown: Bool = false // Controls countdown state
+    @State private var taskCompleted: Bool = false // Controls task completion state
     @State private var timerCancellable: AnyCancellable?
-    @State private var isCooldown: Bool = false // 控制冷卻狀態
+    @State private var isCooldown: Bool = false // Controls cooldown state
 
-    // 定義自動處理的計時器
+    // Define auto-processing timer
     let autoProcessTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    // 定義任務列表
-    @State private var tasks: [Task] = [
-        Task(
-            name: "頭部向左轉",
-            expectedConditions: [1: "left", 4: "turn"],
-            duration: 4,
-            modelName: "facing-model",
-            icon: "arrowshape.left.fill",
-            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["left": 0.9],
-            mediapipeTasks: ["face"]
-        ),
-        Task(
-            name: "頭部回正",
-            expectedConditions: [0: "front"],
-            duration: 4,
-            modelName: "facing-model",
-            icon: "face.smiling.inverse",
-            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.5],
-            mediapipeTasks: ["face"]
-        ),
-        Task(
-            name: "頭部向右轉",
-            expectedConditions: [2: "right", 4: "turn"],
-            duration: 4,
-            modelName: "facing-model",
-            icon: "arrowshape.right.fill",
-            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
-            multipliers: ["front": 1.3],
-            mediapipeTasks: ["face"]
-        ),
-        Task(
-            name: "向上看",
-            expectedConditions: [7: "top"],
-            duration: 4,
-            modelName: "facing-model",
-            icon: "arrow.up.circle.fill",
-            indexToLabelMap: [5: "down", 6: "unknown", 7: "top"],
-            multipliers: ["top": 1.4],
-            mediapipeTasks: ["face"]
-        )
-    ]
+    // Initialize tasks using Task.defaultTasks
+    @State private var tasks: [Task] = Task.defaultTasks
 
     @StateObject var webViewModel = WebViewModel()
 

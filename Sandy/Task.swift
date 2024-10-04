@@ -6,6 +6,7 @@
 //
 
 // Task.swift
+
 import Foundation
 
 // Define Task struct
@@ -21,7 +22,16 @@ struct Task: Identifiable {
     let mediapipeTasks: [String]             // Array of Mediapipe Tasks needed (e.g., ["face", "pose", "hand"])
 
     // Initializer
-    init(name: String, expectedConditions: [Int: String], duration: Int, modelName: String, icon: String, indexToLabelMap: [Int: String], multipliers: [String: Double] = [:], mediapipeTasks: [String]) {
+    init(
+        name: String,
+        expectedConditions: [Int: String],
+        duration: Int,
+        modelName: String,
+        icon: String,
+        indexToLabelMap: [Int: String],
+        multipliers: [String: Double] = [:],
+        mediapipeTasks: [String]
+    ) {
         self.name = name
         self.expectedConditions = expectedConditions
         self.duration = duration
@@ -31,4 +41,48 @@ struct Task: Identifiable {
         self.multipliers = multipliers
         self.mediapipeTasks = mediapipeTasks
     }
+
+    // Static array of default tasks
+    static let defaultTasks: [Task] = [
+        Task(
+            name: "頭部向左轉",
+            expectedConditions: [1: "left", 4: "turn"],
+            duration: 4,
+            modelName: "facing-model",
+            icon: "arrowshape.left.fill",
+            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
+            multipliers: ["left": 0.9],
+            mediapipeTasks: ["face"]
+        ),
+        Task(
+            name: "頭部回正",
+            expectedConditions: [0: "front"],
+            duration: 4,
+            modelName: "facing-model",
+            icon: "face.smiling.inverse",
+            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
+            multipliers: ["front": 1.5],
+            mediapipeTasks: ["face"]
+        ),
+        Task(
+            name: "頭部向右轉",
+            expectedConditions: [2: "right", 4: "turn"],
+            duration: 4,
+            modelName: "facing-model",
+            icon: "arrowshape.right.fill",
+            indexToLabelMap: [0: "front", 1: "left", 2: "right", 3: "tilt", 4: "turn"],
+            multipliers: ["front": 1.3],
+            mediapipeTasks: ["face"]
+        ),
+        Task(
+            name: "向上看",
+            expectedConditions: [7: "top"],
+            duration: 4,
+            modelName: "facing-model",
+            icon: "arrow.up.circle.fill",
+            indexToLabelMap: [5: "down", 6: "unknown", 7: "top"],
+            multipliers: ["top": 1.4],
+            mediapipeTasks: ["face"]
+        )
+    ]
 }

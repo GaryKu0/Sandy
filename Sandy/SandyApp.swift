@@ -83,34 +83,68 @@ struct SandyApp: App {
         }
     }
 
-    // 檢查遠端通知
+    // 檢查遠端通知ㄥ
     private func checkForRemoteNotification() {
-        guard let url = URL(string: "https://nkust.suko.zip/notification.json") else { return }
+        print("checkForRemoteNotification 被呼叫")
+        guard let url = URL(string: "https://nkust.suko.zip/notification.json") else {
+            print("URL 無效")
+            return
+        }
 
         URLSession.shared.dataTask(with: url) { data, response, error in
+            print("開始網路請求")
+            
             if let error = error {
                 print("無法讀取遠端通知：\(error.localizedDescription)")
                 return
             }
 
-            guard let data = data else { return }
+            guard let data = data else {
+                print("沒有收到任何數據")
+                return
+            }
+            
+            print("收到數據，開始解析 JSON")
 
             do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let title = json["title"] as? String,
-                   let body = json["body"] as? String,
-                   let dateString = json["date"] as? String {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    print("JSON 解析成功：\(json)")
+                    
+                    guard let title = json["title"] as? String,
+                          let body = json["body"] as? String,
+                          let dateString = json["date"] as? String else {
+                        print("JSON 格式錯誤，缺少必要的欄位")
+                        return
+                    }
 
                     let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd"
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                    
                     if let notificationDate = formatter.date(from: dateString) {
-                        let today = Calendar.current.startOfDay(for: Date())
+                        print("解析出的通知日期：\(notificationDate)")
+                        let twentyFourHoursAgo = Date().addingTimeInterval(-86400)
+                        print("24 小時前的時間：\(twentyFourHoursAgo)")
 
-                        // 如果通知是今天的或最近 24 小時的，則發送推送通知
-                        if notificationDate >= today.addingTimeInterval(-86400) {
-                            sendCustomNotification(title: title, body: body)
+                        // 如果通知是最近 24 小時內，則發送推送通知
+                        if notificationDate >= twentyFourHoursAgo {
+                            print("通知日期符合條件，準備發送通知")
+                            let identifier = "remoteNotification_\(notificationDate.timeIntervalSince1970)"
+                            let hasSent = UserDefaults.standard.bool(forKey: identifier)
+                            print("通知標識符：\(identifier)，是否已發送過：\(hasSent)")
+
+                            if !hasSent {
+                                sendCustomNotification(title: title, body: body, notificationDate: notificationDate)
+                            } else {
+                                print("已經發送過相同的遠端通知，不再重複發送")
+                            }
+                        } else {
+                            print("通知日期不符合條件，不發送通知")
                         }
+                    } else {
+                        print("日期格式錯誤，無法解析")
                     }
+                } else {
+                    print("JSON 解析失敗，無法轉換為字典")
                 }
             } catch {
                 print("JSON 解析失敗：\(error.localizedDescription)")
@@ -118,20 +152,35 @@ struct SandyApp: App {
         }.resume()
     }
 
+
+
     // 發送即時通知的方法
-    func sendCustomNotification(title: String, body: String) {
+    // 發送即時通知的方法
+    func sendCustomNotification(title: String, body: String, notificationDate: Date) {
+        print("開始發送通知：\(title) - \(body)")
+        
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 6, repeats: false)
 
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        // 使用通知的日期作為識別符（或使用其他唯一標識）
+        let identifier = "remoteNotification_\(notificationDate.timeIntervalSince1970)"
+        print("通知識別符：\(identifier)")
+
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("即時通知添加失敗：\(error.localizedDescription)")
+            } else {
+                print("通知已成功添加：\(identifier)")
+                // 記錄已發送的通知
+                UserDefaults.standard.set(true, forKey: identifier)
             }
         }
     }
+
+
 }
