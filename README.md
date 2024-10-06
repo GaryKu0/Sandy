@@ -1,12 +1,10 @@
-
-<h1 align="center">Sandy 🧽🌿</h1>
+<h1 align="center">Sandy 🧑‍💻🌱</h1>
 
 <img align="center" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjXemO3qq8pyUMQVplQ5myfaS8NoMJ-BJ6SMihxJMskLkMfTgxyuAqyLhmZEWuQhTCxN3pTLQ34U7RBuyPnDqQIpGP1JUbdsLs_7g9c3TVOkAr1vEXNPdBiTPbCjZ59aPlZrgB_8m8C1B5oDJrLq7XhbAt2Q2RKE14bxP74wlCTY3LgXHhFXA/s1400/sandy-cheeks-social.jpg"/>
 
 ![ios](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white)
 ![swift](https://img.shields.io/badge/Swift-FA7343?style=for-the-badge&logo=swift&logoColor=white)
 ![html](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-
 
 **Sandy** is your personal health assistant app inspired by SpongeBob's Sandy Cheeks. Just like Sandy keeps herself healthy and active underwater, our app helps you stay on top of your health goals through engaging tasks, real-time feedback, and intuitive interactions.
 
@@ -37,7 +35,6 @@
 - **Delightful UI**: Enjoy a user-friendly and visually appealing interface inspired by Sandy Cheeks.
 
 ---
-
 
 ## 🚀 Getting Started
 
@@ -95,11 +92,11 @@ Follow these instructions to set up **Sandy** on your local machine for developm
 
 ## ➕ How to Add a New Task
 
-You can easily add new tasks to **Sandy** by modifying the `tasks` array in `ContentView.swift`.
+You can easily add new tasks to **Sandy** by modifying the `Task.swift` file.
 
 ### Steps:
-1. Open `ContentView.swift`.
-2. Locate the `@State private var tasks: [Task]` section.
+1. Open `Task.swift`.
+2. Locate the `defaultTasks` array.
 3. Add a new `Task` object with your desired properties.
 
 For example:
@@ -112,7 +109,8 @@ Task(
     modelName: "jump-model",
     icon: "figure.walk",
     indexToLabelMap: [0: "standing", 1: "handsDown", 2: "jumping", 4: "handsUp"],
-    multipliers: ["jumping": 1.2]
+    multipliers: ["jumping": 1.2],
+    mediapipeTasks: ["pose"]
 )
 ```
 
@@ -144,12 +142,12 @@ You can add custom models to **Sandy** and load them dynamically.
    ```
 
 3. **Add the Task in Swift**:
-   After registering the model in the HTML, follow the steps in the **How to Add a New Task** section to associate the model with a task in `ContentView.swift`.
+   After registering the model in the HTML, follow the steps in the **How to Add a New Task** section to associate the model with a task in `Task.swift`.
 
 4. **Loading and Using the Model**:
    The app will try to load the model from IndexedDB or fetch it from the network. You can also preload models in IndexedDB for faster access.
 
-   Ensure your model follows the required input/output format as expected by the app. 
+   Ensure your model follows the required input/output format as expected by the app.
 
 ---
 
@@ -181,7 +179,7 @@ We welcome contributions from the community! To contribute to **Sandy**, please 
 
 ---
 
-## 📄 License
+## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
 
@@ -194,4 +192,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-> "Stay active and healthy just like Sandy Cheeks!" 🧽🌿
+> "Stay active and healthy just like Sandy Cheeks!" 🦑🌱
+
