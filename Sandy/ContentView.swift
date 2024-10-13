@@ -20,6 +20,8 @@ struct ContentView: View {
     @State private var taskCompleted: Bool = false // Controls task completion state
     @State private var timerCancellable: AnyCancellable?
     @State private var isCooldown: Bool = false // Controls cooldown state
+    @State private var animationAmount: CGFloat = 1.0 // Animation scale
+    @State private var detent = PresentationDetent.fraction(0.4)
 
     // Define auto-processing timer
     let autoProcessTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -29,9 +31,9 @@ struct ContentView: View {
 
     @StateObject var webViewModel = WebViewModel()
 
-    // 定義 `WhatsNew` 數據
+    // Define `WhatsNew` data
     var whatsNew: WhatsNew = WhatsNew(
-        title: "珊迪的新冒險 🐿️🏄‍♀️",
+        title: "珊迪的新冒險 🐿️🏊‍♀️",
         features: [
             .init(
                 image: .init(systemName: "camera.fill", foregroundColor: .blue),
@@ -65,11 +67,11 @@ struct ContentView: View {
         )
     )
 
-    // 控制兩個不同的 sheet
-    @State private var isWhatsNewPresented = true // 控制 WhatsNewSheet 的顯示狀態
-    @State private var isBottomSheetPresented = false // 控制 BottomSheet 的顯示狀態
+    // Control for two different sheets
+    @State private var isWhatsNewPresented = true // Control WhatsNewSheet display state
+    @State private var isBottomSheetPresented = false // Control BottomSheet display state
 
-    // 環境變量，用於檢測設備和尺寸類型
+    // Environment variables for detecting device and size class
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var deviceOrientation = UIDevice.current.orientation
@@ -78,14 +80,14 @@ struct ContentView: View {
         NavigationStack {
             GeometryReader { geometry in
                 if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
-                    // iPad 橫向模式，使用 HStack 佈局
+                    // iPad horizontal mode using HStack layout
                     ZStack {
                         HStack(spacing: 0) {
                             ZStack {
-                                // 相機背景視圖
+                                // Camera background view
                                 CameraView(capturedImage: $inputImage)
                                     .edgesIgnoringSafeArea(.all)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity) // 確保填滿空間
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .onAppear {
                                         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
                                     }
@@ -96,19 +98,27 @@ struct ContentView: View {
                                         deviceOrientation = UIDevice.current.orientation
                                     }
 
-                                // 倒數計時大字顯示（始終存在，使用 opacity 控制顯示）
+                                // Countdown timer display
                                 Text("\(countdown)")
                                     .font(.system(size: 100, weight: .bold))
                                     .foregroundColor(.white)
-                                    .opacity(isCountingDown && countdown > 0 && UIDevice.current.userInterfaceIdiom != .pad ? 1 : 0)
-                                    .animation(.easeInOut, value: countdown)
+                                    .scaleEffect(animationAmount)
+                                    .opacity(isCountingDown && countdown > 0 ? 1 : 0)
+                                    .animation(
+                                        .spring(response: 0.2, dampingFraction: 0.5, blendDuration: 0.5)
+                                            .repeatForever(autoreverses: true),
+                                        value: animationAmount
+                                    )
+                                    .onAppear {
+                                        animationAmount = 1.2
+                                    }
                             }
                             .frame(width: geometry.size.width, height: geometry.size.height)
 
                             Spacer()
                         }
 
-                        // 右側的側邊欄，添加間距和圓角
+                        // Right sidebar with padding and corner radius
                         SideSheet(
                             isPresented: $isPresented,
                             outputText: $outputText,
@@ -129,21 +139,29 @@ struct ContentView: View {
                         .padding(.vertical, 16)
                     }
                 } else {
-                    // iPhone 或直向模式，使用原始佈局
+                    // iPhone or portrait mode using original layout
                     ZStack {
-                        // 相機背景視圖
+                        // Camera background view
                         CameraView(capturedImage: $inputImage)
                             .edgesIgnoringSafeArea(.all)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity) // 確保填滿空間
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                        // 倒數計時大字顯示（始終存在，使用 opacity 控制顯示）
+                        // Countdown timer display
                         Text("\(countdown)")
                             .font(.system(size: 100, weight: .bold))
                             .foregroundColor(.white)
+                            .scaleEffect(animationAmount)
                             .opacity(isCountingDown && countdown > 0 ? 1 : 0)
-                            .animation(.easeInOut, value: countdown)
+                            .animation(
+                                .spring(response: 0.2, dampingFraction: 0.5, blendDuration: 0.5)
+                                    .repeatForever(autoreverses: true),
+                                value: animationAmount
+                            )
+                            .onAppear {
+                                animationAmount = 1.2
+                            }
 
-                        // 右上角的設置按鈕
+                        // Settings button in the top right corner
                         VStack {
                             HStack {
                                 Spacer()
@@ -160,12 +178,12 @@ struct ContentView: View {
                 }
             }
             .onAppear {
-                // 初始化當前任務
+                // Initialize the current task
                 if tasks.indices.contains(taskIndex) {
                     currentTask = tasks[taskIndex]
                 }
 
-                // 註冊通知
+                // Register notifications
                 NotificationCenter.default.addObserver(forName: .taskConditionMet, object: nil, queue: .main) { notification in
                     if let taskName = notification.object as? String, taskName == currentTask?.name {
                         handleTaskConditionMet()
@@ -176,7 +194,7 @@ struct ContentView: View {
                     handleTaskConditionNotMet()
                 }
 
-                // 設置倒數計時器
+                // Set up countdown timer
                 timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
                     .autoconnect()
                     .sink { _ in
@@ -193,7 +211,7 @@ struct ContentView: View {
                                 outputText = "任務完成！"
                                 playSuccessSound()
 
-                                // 開始冷卻期
+                                // Start cooldown period
                                 isCooldown = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                     isCooldown = false
@@ -211,12 +229,12 @@ struct ContentView: View {
                 }
             }
             .onDisappear {
-                // 移除通知
+                // Remove notifications
                 NotificationCenter.default.removeObserver(self)
-                // 取消倒數計時器
+                // Cancel countdown timer
                 timerCancellable?.cancel()
             }
-            // 先呈現 WhatsNewSheet
+            // Show WhatsNewSheet first
             .sheet(isPresented: $isWhatsNewPresented) {
                 WhatsNewView(whatsNew: whatsNew)
                     .onDisappear {
@@ -224,12 +242,12 @@ struct ContentView: View {
                             if UIDevice.current.userInterfaceIdiom != .pad {
                                 isBottomSheetPresented = true
                             } else {
-                                isBottomSheetPresented = false // 確保在 iPad 上不顯示 BottomSheet
+                                isBottomSheetPresented = false // Ensure BottomSheet is not shown on iPad
                             }
                         }
                     }
             }
-            // 當 WhatsNewSheet 被關閉後，呈現 BottomSheet（僅在非 iPad 上）
+            // Show BottomSheet after WhatsNewSheet is dismissed (only on non-iPad)
             .sheet(isPresented: $isBottomSheetPresented) {
                 if UIDevice.current.userInterfaceIdiom != .pad {
                     BottomSheet(
@@ -244,16 +262,17 @@ struct ContentView: View {
                         predictedLabels: $predictedLabels,
                         taskCompleted: $taskCompleted,
                         countdown: $countdown,
-                        isCountingDown: $isCountingDown
+                        isCountingDown: $isCountingDown,
+                        detent: $detent // Pass the binding here
                     )
                     .interactiveDismissDisabled()
-                    .presentationDetents([.fraction(0.4), .fraction(0.5)])
+                    .presentationDetents([.fraction(0.4), .fraction(0.7)], selection: $detent)
                     .presentationDragIndicator(.visible)
                     .presentationCornerRadius(36)
                     .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
                 }
             }
-            // 隱藏的 WebViewContainer
+            // Hidden WebViewContainer
             WebViewContainer(
                 inputImage: $inputImage,
                 outputText: $outputText,
@@ -266,13 +285,13 @@ struct ContentView: View {
             .frame(width: 0, height: 0)
         }
         .environmentObject(webViewModel)
-        // 監聽 showSettings 的變化來控制 BottomSheet
+        // Listen to changes in showSettings to control BottomSheet
         .onChange(of: showSettings) { newValue in
             if newValue {
-                // SettingsView 被打開，收起 BottomSheet
+                // SettingsView opened, dismiss BottomSheet
                 isBottomSheetPresented = false
             } else {
-                // SettingsView 被關閉，展開 BottomSheet（僅在非 iPad 上）
+                // SettingsView closed, show BottomSheet (only on non-iPad)
                 if UIDevice.current.userInterfaceIdiom != .pad {
                     isBottomSheetPresented = true
                 }
@@ -280,7 +299,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - 任務處理函數
+    // MARK: - Task Handling Functions
     func handleTaskConditionMet() {
         print("條件達成: \(currentTask?.name ?? "未知任務")")
         if !isCountingDown && !isCooldown {
@@ -325,14 +344,15 @@ struct ContentView: View {
     }
 
     func playSuccessSound() {
-        AudioServicesPlaySystemSound(1057) // 成功音效
+        AudioServicesPlaySystemSound(1057) // Success sound
     }
 
     func playTickSound() {
-        AudioServicesPlaySystemSound(1103) // 倒數計時音效
+        AudioServicesPlaySystemSound(1103) // Countdown sound
     }
 }
 
+// MARK: - BottomSheet View
 // MARK: - BottomSheet View
 struct BottomSheet: View {
     @Binding var isPresented: Bool
@@ -343,97 +363,100 @@ struct BottomSheet: View {
     @Binding var tasks: [Task]
     @Binding var currentTask: Task?
     @Binding var taskIndex: Int
-    @Binding var predictedLabels: [Int: String]? // 綁定預測標籤
-    @Binding var taskCompleted: Bool // 綁定任務完成狀態
-    @Binding var countdown: Int // 綁定倒數計時
-    @Binding var isCountingDown: Bool // 綁定倒數狀態
+    @Binding var predictedLabels: [Int: String]? // Bind predicted labels
+    @Binding var taskCompleted: Bool // Bind task completion status
+    @Binding var countdown: Int // Bind countdown
+    @Binding var isCountingDown: Bool // Bind countdown state
+    @Binding var detent: PresentationDetent // New binding for detent
 
     @Environment(\.colorScheme) var colorScheme
-    @State private var isFavorite = false // 用來觸發動畫效果
+    @State private var isFavorite = false // Used to trigger animation
     @State private var animationAmount: CGFloat = 1
     @Namespace private var animation
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 24) {
-                // Handle
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 6)
-                    .padding(.top, 8)
-
-                // Task Icon and Status
-                HStack(spacing: 20) {
-                    ZStack {
-                        Circle()
-                            .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                            .frame(width: 80, height: 80)
-                        
-                        Image(systemName: currentTask?.icon ?? "questionmark")
-                            .font(.system(size: 36, weight: .semibold))
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .rotationEffect(.degrees(isFavorite ? 360 : 0))
-                            .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0.5), value: isFavorite)
-                            .onTapGesture {
-                                withAnimation {
-                                    isFavorite.toggle()
-                                }
-                            }
-                    }
-                    .matchedGeometryEffect(id: "taskIcon", in: animation)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(taskCompleted ? "任務完成！" : "進行中")
-                            .font(.headline)
-                            .foregroundColor(taskCompleted ? .green : .primary)
-                        
-                        Text(outputText)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                }
-                .padding(.horizontal)
-
-                // Task Progress
-                HStack {
-                    ForEach(taskIndex..<min(taskIndex + 3, tasks.count), id: \.self) { index in
-                        TaskProgressView(task: tasks[index], isCompleted: taskCompleted && index == taskIndex)
-                    }
-                }
-                .padding(.horizontal)
-
-                // Auto-processing Toggle
-                Toggle(isOn: $isAutoProcessingEnabled) {
-                    Text(isAutoProcessingEnabled ? "自動偵測開啟" : "自動偵測關閉")
-                        .font(.headline)
-                }
-                .toggleStyle(SwitchToggleStyle(tint: .green))
-                .padding(.horizontal)
-
-                // Countdown Timer (if active)
-                if isCountingDown {
-                    Text("\(countdown)")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .scaleEffect(animationAmount)
-                        .animation(
-                            .spring(response: 0.2, dampingFraction: 0.5, blendDuration: 0.5)
-                                .repeatForever(autoreverses: true),
-                            value: animationAmount
-                        )
-                        .onAppear {
-                            animationAmount = 1.2
-                        }
-                }
-            }
-            .padding(.bottom, 32)
-            .background(
+            ZStack {
+                // Background
                 RoundedRectangle(cornerRadius: 36)
                     .fill(colorScheme == .dark ? Color.black.opacity(0.9) : Color.white)
                     .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
-            )
-            .ignoresSafeArea()
+                    .ignoresSafeArea()
+
+                // Content
+                VStack(spacing: 24) {
+                    // Task Icon and Status
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(spacing: 20) {
+                            ZStack {
+                                Circle()
+                                    .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                                    .frame(width: 80, height: 80)
+                                
+                                Image(systemName: currentTask?.icon ?? "questionmark")
+                                    .font(.system(size: 36, weight: .semibold))
+                                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    .rotationEffect(.degrees(isFavorite ? 360 : 0))
+                                    .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0.5), value: isFavorite)
+                                    .onTapGesture {
+                                        withAnimation {
+                                            isFavorite.toggle()
+                                        }
+                                    }
+                            }
+                            .matchedGeometryEffect(id: "taskIcon", in: animation)
+                            .padding(.leading,24)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(taskCompleted ? "任務完成！" : "進行中")
+                                    .font(.headline)
+                                    .foregroundColor(taskCompleted ? .green : .primary)
+                                
+                                Text(outputText)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(2)
+                            }
+                        }
+
+                        // Task Progress
+                        HStack {
+                            ForEach(taskIndex..<min(taskIndex + 3, tasks.count), id: \.self) { index in
+                                TaskProgressView(task: tasks[index], isCompleted: taskCompleted && index == taskIndex)
+                            }
+                        }
+                    }
+                    .padding(.top, 48)
+                    .padding(.horizontal)
+
+                    // YouTubePlayerView adjustment
+                    YouTubePlayerView(videoID: "izCU-ynqi5Q")
+                        .frame(height: detent == .fraction(0.7) ? 200 : 0)
+                        .opacity(detent == .fraction(0.7) ? 1 : 0)
+                        .clipped()
+                        .animation(.easeInOut, value: detent)
+                        .padding(.horizontal)
+                        .cornerRadius(12)
+
+                    // Auto-processing Button
+                    HStack {
+                        AnimatedButton(
+                            text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
+                            action: {
+                                isAutoProcessingEnabled.toggle()
+                            },
+                            lightBackgroundColor: .black,
+                            darkBackgroundColor: .white,
+                            foregroundColor: .white,
+                            cornerRadius: 50,
+                            horizontalPadding: 20,
+                            verticalPadding: 16
+                        )
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                }
+                .padding(.bottom, 32)
+            }
         }
     }
 }
@@ -444,9 +467,10 @@ struct TaskProgressView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            Circle()
-                .fill(isCompleted ? Color.green : Color.gray.opacity(0.3))
-                .frame(width: 12, height: 12)
+            Image(systemName: task.icon)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(isCompleted ? .green : Color.gray.opacity(0.6))
+                .frame(width: 24, height: 24)
             
             Text(task.name)
                 .font(.caption)
@@ -457,8 +481,7 @@ struct TaskProgressView: View {
     }
 }
 
-
 // MARK: - Preview
-#Preview{
+#Preview {
     ContentView()
 }
