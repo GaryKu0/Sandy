@@ -350,87 +350,110 @@ struct BottomSheet: View {
 
     @Environment(\.colorScheme) var colorScheme
     @State private var isFavorite = false // 用來觸發動畫效果
+    @State private var animationAmount: CGFloat = 1
+    @Namespace private var animation
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 20) {
-                HStack {
+            VStack(spacing: 24) {
+                // Handle
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 6)
+                    .padding(.top, 8)
+
+                // Task Icon and Status
+                HStack(spacing: 20) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(colorScheme == .dark ? .white : .black)
-                            .opacity(0.1)
-                        Button {
-                            withAnimation {
-                                isFavorite.toggle()
+                        Circle()
+                            .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .frame(width: 80, height: 80)
+                        
+                        Image(systemName: currentTask?.icon ?? "questionmark")
+                            .font(.system(size: 36, weight: .semibold))
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .rotationEffect(.degrees(isFavorite ? 360 : 0))
+                            .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0.5), value: isFavorite)
+                            .onTapGesture {
+                                withAnimation {
+                                    isFavorite.toggle()
+                                }
                             }
-                        } label: {
-                            Image(systemName: currentTask?.icon ?? "questionmark")
-                                .font(.system(size: 48))
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .padding()
-                        }
-                        .contentTransition(.symbolEffect(.replace))
                     }
-                    .padding(.trailing, 6)
-                    .padding(.leading, 24)
+                    .matchedGeometryEffect(id: "taskIcon", in: animation)
 
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(colorScheme == .dark ? .white : .black)
-                            .opacity(0.1)
-
-                        Text(taskCompleted ? "任務完成！" : outputText)
-                            .font(.system(size: 24))
-                            .fontWeight(.heavy)
-                            .foregroundColor(taskCompleted ? .green : (colorScheme == .dark ? .white : .black))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(taskCompleted ? "任務完成！" : "進行中")
+                            .font(.headline)
+                            .foregroundColor(taskCompleted ? .green : .primary)
+                        
+                        Text(outputText)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
                     }
-                    .padding(.leading, 6)
-                    .padding(.trailing, 24)
                 }
+                .padding(.horizontal)
 
+                // Task Progress
                 HStack {
-                    ForEach(taskIndex..<min(taskIndex + 2, tasks.count), id: \.self) { index in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(taskCompleted && index == taskIndex ? .green : (colorScheme == .dark ? .white : .black))
-                                .opacity(0.1)
-                                .frame(height: 50)
-                            Text(tasks[index].name)
-                                .font(.system(size: 18))
-                                .fontWeight(.medium)
-                                .foregroundColor(taskCompleted && index == taskIndex ? .green : (colorScheme == .dark ? .white : .black))
-                        }
-                        .padding(.horizontal, 4)
+                    ForEach(taskIndex..<min(taskIndex + 3, tasks.count), id: \.self) { index in
+                        TaskProgressView(task: tasks[index], isCompleted: taskCompleted && index == taskIndex)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.horizontal)
 
-                HStack {
-                    AnimatedButton(
-                        text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
-                        action: {
-                            isAutoProcessingEnabled.toggle()
-                        },
-                        lightBackgroundColor: .black,
-                        darkBackgroundColor: .white,
-                        foregroundColor: .white,
-                        cornerRadius: 50,
-                        horizontalPadding: 20,
-                        verticalPadding: 16
-                    )
+                // Auto-processing Toggle
+                Toggle(isOn: $isAutoProcessingEnabled) {
+                    Text(isAutoProcessingEnabled ? "自動偵測開啟" : "自動偵測關閉")
+                        .font(.headline)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 16)
+                .toggleStyle(SwitchToggleStyle(tint: .green))
+                .padding(.horizontal)
+
+                // Countdown Timer (if active)
+                if isCountingDown {
+                    Text("\(countdown)")
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                        .scaleEffect(animationAmount)
+                        .animation(
+                            .spring(response: 0.2, dampingFraction: 0.5, blendDuration: 0.5)
+                                .repeatForever(autoreverses: true),
+                            value: animationAmount
+                        )
+                        .onAppear {
+                            animationAmount = 1.2
+                        }
+                }
             }
-            .padding(.top, 24)
+            .padding(.bottom, 32)
             .background(
                 RoundedRectangle(cornerRadius: 36)
-                    .fill(colorScheme == .dark ? Color.black.opacity(0.8) : Color.white)
-                    .shadow(radius: 10)
+                    .fill(colorScheme == .dark ? Color.black.opacity(0.9) : Color.white)
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
             )
             .ignoresSafeArea()
         }
+    }
+}
+
+struct TaskProgressView: View {
+    let task: Task
+    let isCompleted: Bool
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Circle()
+                .fill(isCompleted ? Color.green : Color.gray.opacity(0.3))
+                .frame(width: 12, height: 12)
+            
+            Text(task.name)
+                .font(.caption)
+                .foregroundColor(isCompleted ? .green : .primary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
