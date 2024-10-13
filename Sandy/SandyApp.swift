@@ -4,6 +4,7 @@ import UserNotifications
 @main
 struct SandyApp: App {
     @StateObject var webViewModel = WebViewModel()
+    private let debug = true // 設置 debug 變數
 
     init() {
         requestNotificationPermission()
@@ -43,6 +44,9 @@ struct SandyApp: App {
 
     // 設定每日提醒通知
     private func scheduleDailyNotification() {
+        let hasScheduled = UserDefaults.standard.bool(forKey: "hasScheduledDailyNotification")
+        if hasScheduled { return }
+
         let center = UNUserNotificationCenter.current()
 
         let notifications = [
@@ -62,31 +66,32 @@ struct SandyApp: App {
         content.sound = .default
 
         var dateComponents = DateComponents()
-        dateComponents.hour = 9 // 每天早上 9 點發送通知
+        if debug {
+            let nextMinute = Calendar.current.date(byAdding: .minute, value: 1, to: Date())!
+            dateComponents = Calendar.current.dateComponents([.hour, .minute], from: nextMinute)
+        } else {
+            dateComponents.hour = 9 // 每天早上 9 點發送通知
+        }
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         let request = UNNotificationRequest(identifier: "dailyReminder", content: content, trigger: trigger)
 
-        center.getPendingNotificationRequests { requests in
-            let today = Calendar.current.startOfDay(for: Date())
-            let lastOpenDate = UserDefaults.standard.object(forKey: "lastOpenDate") as? Date ?? Date.distantPast
-
-            // 如果今天還沒開過 App 並且沒有相同的提醒通知，則新增通知
-            if lastOpenDate < today && !requests.contains(where: { $0.identifier == "dailyReminder" }) {
-                center.add(request) { error in
-                    if let error = error {
-                        print("通知添加失敗：\(error.localizedDescription)")
-                    }
-                }
+        center.add(request) { error in
+            if let error = error {
+                print("通知添加失敗：\(error.localizedDescription)")
+            } else {
+                print("每日提醒通知已成功添加")
+                UserDefaults.standard.set(true, forKey: "hasScheduledDailyNotification")
             }
         }
     }
 
-    // 檢查遠端通知ㄥ
+    // 檢查遠端通知
     private func checkForRemoteNotification() {
         print("checkForRemoteNotification 被呼叫")
-        guard let url = URL(string: "https://nkust.suko.zip/notification.json") else {
+        let randomValue = UUID().uuidString
+        guard let url = URL(string: "https://nkust.suko.zip/notification.json?\(randomValue)") else {
             print("URL 無效")
             return
         }
@@ -152,9 +157,6 @@ struct SandyApp: App {
         }.resume()
     }
 
-
-
-    // 發送即時通知的方法
     // 發送即時通知的方法
     func sendCustomNotification(title: String, body: String, notificationDate: Date) {
         print("開始發送通知：\(title) - \(body)")
@@ -181,6 +183,4 @@ struct SandyApp: App {
             }
         }
     }
-
-
 }
