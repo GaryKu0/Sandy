@@ -5,7 +5,14 @@ import Combine
 import WhatsNewKit
 
 struct ContentView: View {
-    // MARK: - State Variables
+    // Add a new binding variable for preview mode
+    @Binding var isPreviewMode: Bool
+    // If isPreviewMode is not passed, default to false
+    init(isPreviewMode: Binding<Bool> = .constant(false)) {
+        _isPreviewMode = isPreviewMode
+    }
+    
+    
     @State private var showSettings = false
     @State private var inputImage: UIImage?
     @State private var outputText: String = "準備中..."
@@ -22,16 +29,13 @@ struct ContentView: View {
     @State private var isCooldown: Bool = false // Controls cooldown state
     @State private var animationAmount: CGFloat = 1.0 // Animation scale
     @State private var detent = PresentationDetent.fraction(0.4)
-
-    // Define auto-processing timer
+    
     let autoProcessTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    // Initialize tasks using Task.defaultTasks
     @State private var tasks: [Task] = Task.defaultTasks
 
     @StateObject var webViewModel = WebViewModel()
 
-    // Define `WhatsNew` data
     var whatsNew: WhatsNew = WhatsNew(
         title: "珊迪的新冒險 🐿️🏊‍♀️",
         features: [
@@ -67,11 +71,9 @@ struct ContentView: View {
         )
     )
 
-    // Control for two different sheets
-    @State private var isWhatsNewPresented = true // Control WhatsNewSheet display state
-    @State private var isBottomSheetPresented = false // Control BottomSheet display state
+    @State private var isWhatsNewPresented = true
+    @State private var isBottomSheetPresented = false
 
-    // Environment variables for detecting device and size class
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var deviceOrientation = UIDevice.current.orientation
@@ -80,25 +82,24 @@ struct ContentView: View {
         NavigationStack {
             GeometryReader { geometry in
                 if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
-                    // iPad horizontal mode using HStack layout
                     ZStack {
                         HStack(spacing: 0) {
                             ZStack {
-                                // Camera background view
-                                CameraView(capturedImage: $inputImage)
-                                    .edgesIgnoringSafeArea(.all)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .onAppear {
-                                        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-                                    }
-                                    .onDisappear {
-                                        UIDevice.current.endGeneratingDeviceOrientationNotifications()
-                                    }
-                                    .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
-                                        deviceOrientation = UIDevice.current.orientation
-                                    }
-
-                                // Countdown timer display
+                                // Conditionally load CameraView only if it's not preview mode
+                                if !isPreviewMode {
+                                    CameraView(capturedImage: $inputImage)
+                                        .edgesIgnoringSafeArea(.all)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .onAppear {
+                                            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+                                        }
+                                        .onDisappear {
+                                            UIDevice.current.endGeneratingDeviceOrientationNotifications()
+                                        }
+                                        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+                                            deviceOrientation = UIDevice.current.orientation
+                                        }
+                                }
                                 Text("\(countdown)")
                                     .font(.system(size: 100, weight: .bold))
                                     .foregroundColor(.white)
@@ -118,7 +119,6 @@ struct ContentView: View {
                             Spacer()
                         }
 
-                        // Right sidebar with padding and corner radius
                         SideSheet(
                             isPresented: $isPresented,
                             outputText: $outputText,
@@ -139,14 +139,12 @@ struct ContentView: View {
                         .padding(.vertical, 16)
                     }
                 } else {
-                    // iPhone or portrait mode using original layout
                     ZStack {
-                        // Camera background view
-                        CameraView(capturedImage: $inputImage)
-                            .edgesIgnoringSafeArea(.all)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        // Countdown timer display
+                        if !isPreviewMode {
+                            CameraView(capturedImage: $inputImage)
+                                .edgesIgnoringSafeArea(.all)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         Text("\(countdown)")
                             .font(.system(size: 100, weight: .bold))
                             .foregroundColor(.white)
@@ -161,7 +159,6 @@ struct ContentView: View {
                                 animationAmount = 1.2
                             }
 
-                        // Settings button in the top right corner
                         VStack {
                             HStack {
                                 Spacer()
@@ -178,12 +175,9 @@ struct ContentView: View {
                 }
             }
             .onAppear {
-                // Initialize the current task
                 if tasks.indices.contains(taskIndex) {
                     currentTask = tasks[taskIndex]
                 }
-
-                // Register notifications
                 NotificationCenter.default.addObserver(forName: .taskConditionMet, object: nil, queue: .main) { notification in
                     if let taskName = notification.object as? String, taskName == currentTask?.name {
                         handleTaskConditionMet()
@@ -194,7 +188,6 @@ struct ContentView: View {
                     handleTaskConditionNotMet()
                 }
 
-                // Set up countdown timer
                 timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
                     .autoconnect()
                     .sink { _ in
@@ -210,8 +203,6 @@ struct ContentView: View {
                                 taskCompleted = true
                                 outputText = "任務完成！"
                                 playSuccessSound()
-
-                                // Start cooldown period
                                 isCooldown = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                     isCooldown = false
@@ -229,12 +220,9 @@ struct ContentView: View {
                 }
             }
             .onDisappear {
-                // Remove notifications
                 NotificationCenter.default.removeObserver(self)
-                // Cancel countdown timer
                 timerCancellable?.cancel()
             }
-            // Show WhatsNewSheet first
             .sheet(isPresented: $isWhatsNewPresented) {
                 WhatsNewView(whatsNew: whatsNew)
                     .onDisappear {
@@ -242,12 +230,11 @@ struct ContentView: View {
                             if UIDevice.current.userInterfaceIdiom != .pad {
                                 isBottomSheetPresented = true
                             } else {
-                                isBottomSheetPresented = false // Ensure BottomSheet is not shown on iPad
+                                isBottomSheetPresented = false
                             }
                         }
                     }
             }
-            // Show BottomSheet after WhatsNewSheet is dismissed (only on non-iPad)
             .sheet(isPresented: $isBottomSheetPresented) {
                 if UIDevice.current.userInterfaceIdiom != .pad {
                     BottomSheet(
@@ -263,7 +250,7 @@ struct ContentView: View {
                         taskCompleted: $taskCompleted,
                         countdown: $countdown,
                         isCountingDown: $isCountingDown,
-                        detent: $detent // Pass the binding here
+                        detent: $detent
                     )
                     .interactiveDismissDisabled()
                     .presentationDetents([.fraction(0.4), .fraction(0.7)], selection: $detent)
@@ -272,26 +259,25 @@ struct ContentView: View {
                     .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.4)))
                 }
             }
-            // Hidden WebViewContainer
-            WebViewContainer(
-                inputImage: $inputImage,
-                outputText: $outputText,
-                isProcessing: $isProcessing,
-                predictedLabels: $predictedLabels,
-                currentTask: $currentTask,
-                tasks: $tasks
-            )
-            .hidden()
-            .frame(width: 0, height: 0)
+            // Conditionally load WebViewContainer if not preview mode
+            if !isPreviewMode {
+                WebViewContainer(
+                    inputImage: $inputImage,
+                    outputText: $outputText,
+                    isProcessing: $isProcessing,
+                    predictedLabels: $predictedLabels,
+                    currentTask: $currentTask,
+                    tasks: $tasks
+                )
+                .hidden()
+                .frame(width: 0, height: 0)
+            }
         }
         .environmentObject(webViewModel)
-        // Listen to changes in showSettings to control BottomSheet
         .onChange(of: showSettings) { newValue in
             if newValue {
-                // SettingsView opened, dismiss BottomSheet
                 isBottomSheetPresented = false
             } else {
-                // SettingsView closed, show BottomSheet (only on non-iPad)
                 if UIDevice.current.userInterfaceIdiom != .pad {
                     isBottomSheetPresented = true
                 }
@@ -299,7 +285,8 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Task Handling Functions
+    // Task Handling Functions
+
     func handleTaskConditionMet() {
         print("條件達成: \(currentTask?.name ?? "未知任務")")
         if !isCountingDown && !isCooldown {
@@ -352,7 +339,6 @@ struct ContentView: View {
     }
 }
 
-// MARK: - BottomSheet View
 // MARK: - BottomSheet View
 struct BottomSheet: View {
     @Binding var isPresented: Bool
@@ -428,38 +414,63 @@ struct BottomSheet: View {
                     .padding(.top, 48)
                     .padding(.horizontal)
 
+                    
                     // YouTubePlayerView adjustment
                     YouTubePlayerView(videoID: "izCU-ynqi5Q")
                         .frame(height: detent == .fraction(0.7) ? 200 : 0)
+                        .cornerRadius(24)
                         .opacity(detent == .fraction(0.7) ? 1 : 0)
                         .clipped()
                         .animation(.easeInOut, value: detent)
                         .padding(.horizontal)
-                        .cornerRadius(12)
 
-                    // Auto-processing Button
-                    HStack {
-                        AnimatedButton(
-                            text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
-                            action: {
-                                isAutoProcessingEnabled.toggle()
-                            },
-                            lightBackgroundColor: .black,
-                            darkBackgroundColor: .white,
-                            foregroundColor: .white,
-                            cornerRadius: 50,
-                            horizontalPadding: 20,
-                            verticalPadding: 16
-                        )
-                    }
-                    .padding(.top, 16)
-                    .padding(.bottom, 16)
+                    // Auto-processing Button with Safe Area Inset
+//                    HStack {
+//                        Spacer()
+//                        AnimatedButton(
+//                            text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
+//                            action: {
+//                                isAutoProcessingEnabled.toggle()
+//                            },
+//                            lightBackgroundColor: .black,
+//                            darkBackgroundColor: .white,
+//                            foregroundColor: .white,
+//                            cornerRadius: 48,
+//                            verticalPadding: 20
+//                        )
+//                        Spacer()
+//                    }
+//                    .padding(.horizontal, 24)
                 }
-                .padding(.bottom, 32)
+                .frame(maxHeight: .infinity, alignment: .top) // Align content to the top
+            }
+            .safeAreaInset(edge: .bottom) {
+                HStack {
+                    Spacer()
+                    // Bottom inset for button to avoid it being cut off
+                    AnimatedButton(
+                        text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
+                        action: {
+                            isAutoProcessingEnabled.toggle()
+                        },
+                        lightBackgroundColor: .black,
+                        darkBackgroundColor: .white,
+                        foregroundColor: .white,
+                        cornerRadius: 48,
+                        verticalPadding: 20
+                    )
+                    .padding(.leading,16)
+                    .padding(.trailing,16)
+                    Spacer()
+                }
+                .padding(.vertical, 16) // Padding to ensure proper spacing from the screen edge
+                .background(colorScheme == .dark ? Color.black.opacity(0.9) : Color.white.opacity(0.4)) // Match the background of the bottom inset
             }
         }
     }
 }
+
+
 
 struct TaskProgressView: View {
     let task: Task
@@ -483,5 +494,5 @@ struct TaskProgressView: View {
 
 // MARK: - Preview
 #Preview {
-    ContentView()
+    ContentView(isPreviewMode: .constant(true)) // Pass true for preview mode
 }

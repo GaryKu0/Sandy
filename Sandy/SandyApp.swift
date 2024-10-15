@@ -4,7 +4,7 @@ import UserNotifications
 @main
 struct SandyApp: App {
     @StateObject var webViewModel = WebViewModel()
-    private let debug = true // 設置 debug 變數
+    private let debug = false // 設置 debug 變數
 
     init() {
         requestNotificationPermission()
