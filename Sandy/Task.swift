@@ -83,6 +83,16 @@ struct Task: Identifiable {
             indexToLabelMap: [5: "down", 6: "unknown", 7: "top"],
             multipliers: ["top": 1.4],
             mediapipeTasks: ["face"]
+        ),
+        Task(
+            name:"顎下線按摩",
+            expectedConditions: [0: "YES"],
+            duration: 4,
+            modelName: "submandibular_gland",
+            icon: "person.crop.circle",
+            indexToLabelMap: [0: "NO", 1: "YES"],
+            multipliers: ["YES": 1.5],
+            mediapipeTasks: ["pose", "hand"]
         )
     ]
 }
