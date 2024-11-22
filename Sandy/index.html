@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Mediapipe Landmarker</title>
@@ -9,11 +10,12 @@
         }
     </style>
 </head>
+
 <body>
     <canvas id="outputCanvas"></canvas>
 
     <!-- 引入 TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0"></script>
     <script type="module">
         // Import Mediapipe Tasks
         import { FaceLandmarker, HandLandmarker, PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
@@ -21,6 +23,8 @@
         let vision = null;
         let landmarkers = {};
         let models = {};
+        let modelLoadingPromises = {};
+        let modelInitialized = {};
 
         // 捕获全局错误并传递给 Swift
         window.onerror = function (message, source, lineno, colno, error) {
@@ -51,7 +55,7 @@
             } else {
                 let landmarker = null;
                 try {
-                    switch(taskName) {
+                    switch (taskName) {
                         case 'face':
                             // 創建 FaceLandmarker
                             landmarker = await FaceLandmarker.createFromOptions(vision, {
@@ -104,22 +108,17 @@
         // 主处理函数
         async function processImage(imageData, mediapipeTasks, modelName) {
             if (!vision) {
-                console.error('Vision not initialized');
-                window.webkit.messageHandlers.consoleHandler.postMessage('Error: Vision not initialized');
-                return null;
+                throw new Error('Vision not initialized');
             }
 
             try {
-                // 加载模型以获取输入形状
+                // Load the model if not already loaded
                 let model = models[modelName];
                 if (!model) {
-                    console.log(`Loading model: ${modelName}`);
-                    model = await tf.loadGraphModel(`https://sandy.suko.zip/models/${modelName}/model.json`);
-                    // Moving model to the Sandy official website 👹
-                    models[modelName] = model;
-                    console.log(`Model ${modelName} loaded`);
-                } else {
-                    console.log(`Model ${modelName} loaded from cache`);
+                    model = await loadModel(modelName);
+                    if (!model) {
+                        throw new Error(`Failed to load model ${modelName}`);
+                    }
                 }
 
                 // 获取模型的输入形状
@@ -138,7 +137,7 @@
                     }
 
                     let results = null;
-                    switch(taskName) {
+                    switch (taskName) {
                         case 'face':
                             results = await landmarker.detect(imageData);
                             if (results.faceLandmarks && results.faceLandmarks.length > 0) {
@@ -183,7 +182,7 @@
                 }
             } catch (error) {
                 console.error('Error during image processing:', error);
-                window.webkit.messageHandlers.consoleHandler.postMessage('Error during image processing: ' + error.message);
+                window.webkit.messageHandlers.consoleHandler.postMessage(`Processing error: ${error.message}`);
                 return null;
             }
         }
@@ -223,6 +222,66 @@
                 console.error('Error running model:', error);
                 window.webkit.messageHandlers.consoleHandler.postMessage('Error running model: ' + error.message);
                 return null;
+            }
+        }
+
+        // Simplify the validateAndWarmupModel function
+        async function validateAndWarmupModel(model, modelName) {
+            try {
+                // Check if the model is loaded
+                if (!model) {
+                    throw new Error('Model not loaded');
+                }
+
+                // Optional: Warm up the model with dummy data
+                const inputShape = model.inputs[0].shape;
+                const warmupShape = inputShape.map(dim => (dim === -1 ? 1 : dim)); // Replace -1 with 1
+                const dummyInput = tf.zeros(warmupShape);
+
+                await model.predict(dummyInput).data();
+                dummyInput.dispose();
+
+                console.log(`Model ${modelName} warmed up successfully`);
+                return true;
+            } catch (error) {
+                console.error(`Model warmup failed for ${modelName}:`, error);
+                // Proceed without failing
+                return true;
+            }
+        }
+
+        async function loadModel(modelName) {
+            if (models[modelName]) {
+                return models[modelName];
+            }
+            try {
+                const modelUrl = `https://sandy.suko.zip/models/${modelName}/model.json`;
+                console.log(`Loading model: ${modelName} from ${modelUrl}`);
+        
+                // Fetch the model.json to detect the format
+                const response = await fetch(modelUrl);
+                const modelJson = await response.json();
+                let model;
+        
+                if (modelJson.format === 'graph-model') {
+                    model = await tf.loadGraphModel(modelUrl);
+                } else if (modelJson.format === 'layers-model') {
+                    model = await tf.loadLayersModel(modelUrl);
+                } else {
+                    throw new Error(`Unknown model format: ${modelJson.format}`);
+                }
+        
+                // Warm up the model (optional)
+                await validateAndWarmupModel(model, modelName);
+                models[modelName] = model;
+                return model;
+            } catch (error) {
+                console.error(`Error loading model ${modelName}:`, error);
+                console.error(`Stack Trace:`, error.stack);
+                window.webkit.messageHandlers.consoleHandler.postMessage(
+                    `Error loading model ${modelName}: ${error.message}`
+                );
+                throw error;
             }
         }
 
@@ -278,4 +337,5 @@
         window.processImageData = processImageData;
     </script>
 </body>
+
 </html>

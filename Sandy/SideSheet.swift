@@ -1,7 +1,7 @@
 import SwiftUI
 import WebKit
 
-// MARK: - 側邊欄視圖
+// MARK: - SideSheet View
 struct SideSheet: View {
     @Binding var isPresented: Bool
     @Binding var outputText: String
@@ -11,23 +11,23 @@ struct SideSheet: View {
     @Binding var tasks: [Task]
     @Binding var currentTask: Task?
     @Binding var taskIndex: Int
-    @Binding var predictedLabels: [Int: String]? // 綁定預測標籤
-    @Binding var taskCompleted: Bool // 綁定任務完成狀態
-    @Binding var countdown: Int // 綁定倒數計時
-    @Binding var isCountingDown: Bool // 綁定倒數狀態
+    @Binding var predictedLabels: [Int: String]? // Bind predicted labels
+    @Binding var taskCompleted: Bool // Bind task completion status
+    @Binding var countdown: Int // Bind countdown
+    @Binding var isCountingDown: Bool // Bind countdown state
 
     @Environment(\.colorScheme) var colorScheme
-    @State private var isFavorite = false // 用來觸發動畫效果
+    @State private var isFavorite = false // Used to trigger animation
 
     var body: some View {
         VStack(spacing: 20) {
-            // 嵌入式 YouTube 影片播放器
-            YouTubePlayerView(videoID: "izCU-ynqi5Q") // 實際的 YouTube 影片 ID
-                .frame(height: 220) // 調整影片高度
+            // Embedded YouTube video player
+            YouTubePlayerView(videoID: "izCU-ynqi5Q") // Actual YouTube video ID
+                .frame(height: 220) // Adjust video height
                 .cornerRadius(20)
                 .padding(.horizontal, 16)
 
-            // 倒數計時顯示
+            // Countdown display
             if UIDevice.current.userInterfaceIdiom == .pad {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
@@ -103,15 +103,17 @@ struct SideSheet: View {
                     darkBackgroundColor: .white,
                     foregroundColor: .white,
                     cornerRadius: 50,
-                    horizontalPadding: 20,
+                    horizontalPadding: 48,
                     verticalPadding: 16
                 )
             }
             .padding(.top, 16)
             .padding(.bottom, 16)
+            .padding(.trailing, 24)
+            .padding(.leading, 24)
         }
-        .padding(.top, 16) // 調整頂部間距
-        .padding(.bottom, 16) // 調整底部間距
+        .padding(.top, 16) // Adjust top padding
+        .padding(.bottom, 16) // Adjust bottom padding
         .background(
             RoundedRectangle(cornerRadius: 36)
                 .fill(colorScheme == .dark ? Color.black.opacity(0.8) : Color.white.opacity(0.8))

@@ -12,7 +12,6 @@ struct ContentView: View {
         _isPreviewMode = isPreviewMode
     }
     
-    
     @State private var showSettings = false
     @State private var inputImage: UIImage?
     @State private var outputText: String = "準備中..."
@@ -29,6 +28,13 @@ struct ContentView: View {
     @State private var isCooldown: Bool = false // Controls cooldown state
     @State private var animationAmount: CGFloat = 1.0 // Animation scale
     @State private var detent = PresentationDetent.fraction(0.4)
+    @State private var successTimeCounter: Int = 0 // Track time conditions were met
+    
+    // New properties for routine and movement tracking
+    @State private var routineStartTime: Date?
+    @State private var movementStartTime: Date?
+    @State private var completedMovements: [MovementHistory] = []
+    @State private var routineHistories: [RoutineHistory] = []
     
     let autoProcessTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -162,7 +168,7 @@ struct ContentView: View {
                         VStack {
                             HStack {
                                 Spacer()
-                                NavigationLink(destination: SettingsView(), isActive: $showSettings) {
+                                NavigationLink(destination: SettingsView(routineHistories: $routineHistories), isActive: $showSettings) {
                                     Image(systemName: "gearshape.fill")
                                         .font(.title2)
                                         .foregroundColor(.white)
@@ -177,6 +183,12 @@ struct ContentView: View {
             .onAppear {
                 if tasks.indices.contains(taskIndex) {
                     currentTask = tasks[taskIndex]
+                    movementStartTime = Date() // Start tracking time for the current movement
+                    if routineStartTime == nil {
+                        routineStartTime = Date() // Start timing the routine
+                        completedMovements = []
+                    }
+                    isCountingDown = false // Ensure countdown is not active yet
                 }
                 NotificationCenter.default.addObserver(forName: .taskConditionMet, object: nil, queue: .main) { notification in
                     if let taskName = notification.object as? String, taskName == currentTask?.name {
@@ -198,11 +210,29 @@ struct ContentView: View {
                                 print("倒數: \(countdown)")
                                 playTickSound()
                             }
-                            if countdown == 0 && isCountingDown {
+                            if countdown == 0 {
+                                // Movement time is up
                                 isCountingDown = false
                                 taskCompleted = true
                                 outputText = "任務完成！"
                                 playSuccessSound()
+
+                                // Record movement data
+                                let movementEndTime = Date()
+                                let duration = Int(movementEndTime.timeIntervalSince(movementStartTime ?? movementEndTime))
+                                if let task = currentTask {
+                                    let movementHistory = MovementHistory(
+                                        movementName: task.name,
+                                        icon: task.icon,
+                                        duration: duration,
+                                        startTime: movementStartTime ?? movementEndTime,
+                                        endTime: movementEndTime,
+                                        wasSuccessful: true // Movement completed successfully
+                                    )
+                                    completedMovements.append(movementHistory)
+                                }
+                                movementStartTime = nil
+
                                 isCooldown = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                     isCooldown = false
@@ -288,6 +318,9 @@ struct ContentView: View {
     // Task Handling Functions
 
     func handleTaskConditionMet() {
+        withAnimation {
+            successTimeCounter += 1
+        }
         print("條件達成: \(currentTask?.name ?? "未知任務")")
         if !isCountingDown && !isCooldown {
             startCountdown()
@@ -296,10 +329,10 @@ struct ContentView: View {
 
     func handleTaskConditionNotMet() {
         print("條件未達成")
+        outputText = "條件未達成"
         if isCountingDown {
             pauseCountdown()
         }
-        outputText = "條件未達成"
     }
 
     func startCountdown() {
@@ -307,6 +340,7 @@ struct ContentView: View {
         countdown = currentTask?.duration ?? 4
         taskCompleted = false
         outputText = "倒數: \(countdown)秒"
+        successTimeCounter = 0 // Reset success counter for the new task
     }
 
     func pauseCountdown() {
@@ -317,15 +351,30 @@ struct ContentView: View {
         withAnimation(.easeInOut(duration: 0.5)) {
             taskIndex += 1
             if taskIndex >= tasks.count {
-                taskIndex = 0
+                // Routine is completed
+                let routineEndTime = Date()
+                let totalDuration = Int(routineEndTime.timeIntervalSince(routineStartTime ?? routineEndTime))
+                let routineHistory = RoutineHistory(
+                    routineName: "預設任務序列",
+                    movements: completedMovements,
+                    totalDuration: totalDuration,
+                    completionDate: routineEndTime,
+                    wasSuccessful: true // Or determine based on criteria
+                )
+                // Add to history
+                routineHistories.insert(routineHistory, at: 0)
+                // Reset routine timing
+                routineStartTime = nil
+                completedMovements = []
+                taskIndex = 0 // Reset task index to start over
             }
 
             if tasks.indices.contains(taskIndex) {
                 currentTask = tasks[taskIndex]
                 taskCompleted = false
-                countdown = 0
-                isCountingDown = false
-                outputText = "準備下一個任務"
+                movementStartTime = Date() // Start timing the movement
+                isCountingDown = false // Not counting down yet
+                successTimeCounter = 0 // Reset success counter
             }
         }
     }
@@ -338,6 +387,7 @@ struct ContentView: View {
         AudioServicesPlaySystemSound(1103) // Countdown sound
     }
 }
+
 
 // MARK: - BottomSheet View
 struct BottomSheet: View {
@@ -425,22 +475,6 @@ struct BottomSheet: View {
                         .padding(.horizontal)
 
                     // Auto-processing Button with Safe Area Inset
-//                    HStack {
-//                        Spacer()
-//                        AnimatedButton(
-//                            text: isAutoProcessingEnabled ? "自動偵測關閉" : "自動偵測開啟",
-//                            action: {
-//                                isAutoProcessingEnabled.toggle()
-//                            },
-//                            lightBackgroundColor: .black,
-//                            darkBackgroundColor: .white,
-//                            foregroundColor: .white,
-//                            cornerRadius: 48,
-//                            verticalPadding: 20
-//                        )
-//                        Spacer()
-//                    }
-//                    .padding(.horizontal, 24)
                 }
                 .frame(maxHeight: .infinity, alignment: .top) // Align content to the top
             }
@@ -453,9 +487,6 @@ struct BottomSheet: View {
                         action: {
                             isAutoProcessingEnabled.toggle()
                         },
-                        lightBackgroundColor: .black,
-                        darkBackgroundColor: .white,
-                        foregroundColor: .white,
                         cornerRadius: 48,
                         verticalPadding: 20
                     )
@@ -493,6 +524,8 @@ struct TaskProgressView: View {
 }
 
 // MARK: - Preview
-#Preview {
-    ContentView(isPreviewMode: .constant(true)) // Pass true for preview mode
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(isPreviewMode: .constant(true)) // Pass true for preview mode
+    }
 }

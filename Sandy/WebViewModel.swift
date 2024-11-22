@@ -14,4 +14,14 @@ class WebViewModel: ObservableObject {
     var predictedLabelsPublisher: Published<[Int: String]?>.Publisher { $predictedLabels }
 
     weak var webView: WKWebView? // 保存 WKWebView 的弱引用
+
+    func clearModelCache() {
+        webView?.evaluateJavaScript("tf.disposeVariables();") { (result, error) in
+            if let error = error {
+                print("Error clearing model cache: \(error)")
+            } else {
+                print("Model cache cleared successfully.")
+            }
+        }
+    }
 }

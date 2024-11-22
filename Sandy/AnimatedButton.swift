@@ -37,7 +37,7 @@ struct AnimatedButton: View {
 
                 if showCheck {
                     Image(systemName: "checkmark")
-                        .foregroundColor(foregroundColor)
+                        .foregroundColor(colorScheme == .dark ? lightBackgroundColor : darkBackgroundColor)
                         .font(.system(size: 20, weight: .bold))
                         .scaleEffect(showCheck ? 1 : 0.8) // Adjust scaling when showing
                         .opacity(showCheck ? 1 : 0) // Adjust opacity to fade in and out

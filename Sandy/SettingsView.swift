@@ -9,21 +9,16 @@ import SwiftUI
 
 // MARK: - 設置視圖
 struct SettingsView: View {
+    @Binding var routineHistories: [RoutineHistory]
+
     var body: some View {
-        VStack {
-            Text("施工中")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            Image(systemName: "hammer.fill")
-                .font(.system(size: 50))
-                .padding()
-
-            Text("此功能正在開發中，敬請期待！")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .padding()
+        NavigationView {
+            List {
+                NavigationLink(destination: HistoryView(routineHistories: $routineHistories)) {
+                    Label("查看歷史紀錄", systemImage: "clock.arrow.circlepath")
+                }
+            }
+            .navigationTitle("設定")
         }
-        .navigationBarTitle("設置", displayMode: .inline)
     }
 }
