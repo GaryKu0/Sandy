@@ -84,15 +84,35 @@ struct Task: Identifiable {
             multipliers: ["top": 1.4],
             mediapipeTasks: ["face"]
         ),
-//        Task(
-//            name:"顎下線按摩",
-//            expectedConditions: [0: "YES"],
-//            duration: 4,
-//            modelName: "submandibular_gland",
-//            icon: "person.crop.circle",
-//            indexToLabelMap: [0: "NO", 1: "YES"],
-//            multipliers: ["YES": 1.5],
-//            mediapipeTasks: ["pose", "hand"]
-//        )
+       Task(
+           name:"顎下線按摩",
+           expectedConditions: [0: "YES"],
+           duration: 4,
+           modelName: "submandibular_gland",
+           icon: "person.crop.circle",
+           indexToLabelMap: [0: "YES", 1: "NO"],
+           multipliers: ["YES": 1.5],
+           mediapipeTasks: ["pose", "hand"]
+       ),
+       Task(
+           name:"唾液線按摩",
+           expectedConditions: [0: "YES"],
+           duration: 4,
+           modelName: "parotid_gland",
+           icon: "person.circle.fill",
+           indexToLabelMap: [0: "YES", 1: "NO"],
+           multipliers: ["YES": 1.5],
+           mediapipeTasks: ["pose", "hand"]
+       ),
+       Task(
+           name:"舌下腺按摩",
+           expectedConditions: [0: "YES"],
+           duration: 4,
+           modelName: "sublingual_gland",
+           icon: "person.circle",
+           indexToLabelMap: [0: "YES", 1: "NO"],
+           multipliers: ["YES": 1.5],
+           mediapipeTasks: ["pose", "hand"]
+       )
     ]
 }
