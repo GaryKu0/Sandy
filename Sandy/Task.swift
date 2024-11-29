@@ -92,7 +92,7 @@ struct Task: Identifiable {
            icon: "person.crop.circle",
            indexToLabelMap: [0: "YES", 1: "NO"],
            multipliers: ["YES": 1.5],
-           mediapipeTasks: ["pose", "hand"]
+           mediapipeTasks: ["face", "hand"]
        ),
        Task(
            name:"唾液線按摩",
@@ -102,7 +102,7 @@ struct Task: Identifiable {
            icon: "person.circle.fill",
            indexToLabelMap: [0: "YES", 1: "NO"],
            multipliers: ["YES": 1.5],
-           mediapipeTasks: ["pose", "hand"]
+           mediapipeTasks: ["face", "hand"]
        ),
        Task(
            name:"舌下腺按摩",
@@ -112,7 +112,7 @@ struct Task: Identifiable {
            icon: "person.circle",
            indexToLabelMap: [0: "YES", 1: "NO"],
            multipliers: ["YES": 1.5],
-           mediapipeTasks: ["pose", "hand"]
+           mediapipeTasks: ["face", "hand"]
        )
     ]
 }
